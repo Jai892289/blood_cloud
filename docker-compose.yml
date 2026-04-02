@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: blood_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blooddb
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./blood-bank-backend/blood-bank-backend
+    container_name: blood_backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/blooddb
+    restart: always
+
+  frontend:
+    build: ./blood-bank-frontend/blood-bank-frontend
+    container_name: blood_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    env_file:
+    - ./blood-bank-frontend/blood-bank-frontend/.env.local
+    restart: always
+
+volumes:
+  pgdata:
