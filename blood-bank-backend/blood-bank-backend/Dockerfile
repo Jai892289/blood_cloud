@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # Start app
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npx drizzle-kit push && npm run dev"]

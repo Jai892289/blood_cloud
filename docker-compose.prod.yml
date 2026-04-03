@@ -1,0 +1,22 @@
+version: "3.7"
+
+services:
+  backend:
+    build: ./blood-bank-backend/blood-bank-backend
+    container_name: blood_backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./blood-bank-backend/blood-bank-backend/.env.prod
+    restart: always
+
+  frontend:
+    build: ./blood-bank-frontend/blood-bank-frontend
+    container_name: blood_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    env_file:
+      - ./blood-bank-frontend/blood-bank-frontend/.env.production
+    restart: always
