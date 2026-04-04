@@ -14,11 +14,19 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import bloodGroupMasterRoutes from "./routes/bloodGroupMasterRoutes.js";
 import bloodComponentRoutes from "./routes/bloodComponentRoutes.js";
 import countersRoutes from "./routes/countersRoutes.js";
+// import https from "https";
+// import fs from "fs";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+  origin: ["https://hopeblood.info", "http://localhost:3000"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const { Pool } = pkg;
@@ -57,3 +65,15 @@ const PORT = process.env.PORT || 5000;
 checkDatabaseConnection().then(() => {
   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 });
+
+
+// checkDatabaseConnection().then(() => {
+//   const options = {
+//     key: fs.readFileSync("./ssl/key.pem"),
+//     cert: fs.readFileSync("./ssl/cert.pem"),
+//   };
+
+//   https.createServer(options, app).listen(PORT, () => {
+//     console.log(`🚀 HTTPS Server running on port ${PORT}`);
+//   });
+// });
