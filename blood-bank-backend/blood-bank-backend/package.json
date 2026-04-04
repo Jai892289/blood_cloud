@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-      "type": "module",
-
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
@@ -19,8 +18,12 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
+    "node-forge": "^1.4.0",
+    "pg": "^8.16.3",
+    "selfsigned": "^5.5.0"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.6",
