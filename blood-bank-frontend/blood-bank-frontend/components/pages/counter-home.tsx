@@ -85,6 +85,11 @@ export default function CounterHomePage({ setCurrentPage }: any) {
   const totalBills = summary.totalBillings || 0;
   const totalCollected = Number(summary.totalAmountCollected || 0);
 
+      const role = localStorage.getItem("userRole") 
+
+      console.log("343333333333333333333333333", role)
+
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -97,6 +102,8 @@ export default function CounterHomePage({ setCurrentPage }: any) {
         </div>
 
         {/* RIGHT SECTION — Add Bill Button */}
+              {role !== "Billing_Staff" && (
+
         <div>
           <button
             onClick={() => setCurrentPage("new-billing")}
@@ -104,7 +111,7 @@ export default function CounterHomePage({ setCurrentPage }: any) {
           >
             + Add Bill
           </button>
-        </div>
+        </div>)}
 
       </div>
 
@@ -202,7 +209,8 @@ export default function CounterHomePage({ setCurrentPage }: any) {
       </div>
 
       {/* ✅ Quick Actions */}
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+      {role !== "Billing_Staff" && (
+<div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
         <h2 className="text-lg font-bold text-gray-900 mb-6">Quick Actions</h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
@@ -253,6 +261,8 @@ export default function CounterHomePage({ setCurrentPage }: any) {
 
         </div>
       </div>
+      )}
+      
 
 
 

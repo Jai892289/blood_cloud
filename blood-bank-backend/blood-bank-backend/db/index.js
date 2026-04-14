@@ -8,12 +8,24 @@ const { Pool } = pkg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-    ssl: false,
-
-  //  ssl: {
-  //   rejectUnauthorized: false, // REQUIRED for Railway
-  // },
+  ssl: false
 });
+
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: {
+//     rejectUnauthorized: false,
+//   },
+// });
+
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//     ssl: false,
+
+//   //  ssl: {
+//   //   rejectUnauthorized: false, // REQUIRED for Railway
+//   // },
+// });
 
 export const db = drizzle(pool, { schema });
 export { schema };

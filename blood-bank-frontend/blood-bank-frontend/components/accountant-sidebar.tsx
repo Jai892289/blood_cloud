@@ -17,7 +17,7 @@ interface SidebarProps {
   onLogout?: () => void
 }
 
-export default function Sidebar({
+export default function AccountantSidebar({
   currentPage,
   setCurrentPage,
   onLogout,
@@ -26,14 +26,14 @@ export default function Sidebar({
 
   const menuItems = [
     { id: "dashboard", icon: LayoutGrid, label: "Dashboard" },
-    { id: "user-management", icon: Users, label: "User Management" },
-    { id: "billing-setup", icon: FileText, label: "Billing Setup" },
-    { id: "billing-records", icon: FileText, label: "Billing History" },
-    { id: "blood-component-master-admin", icon: BarChart3, label: "Component Master" },
-    { id: "add-billing", icon: BarChart3, label: "Add Billing" },
+        { id: "billing-history", icon: FileText, label: "Billing History" },
+    // { id: "user-management", icon: Users, label: "User Management" },
+    // { id: "billing-setup", icon: FileText, label: "Billing Setup" },
+    // { id: "blood-component-master-admin", icon: BarChart3, label: "Component Master" },
+    // { id: "add-billing", icon: BarChart3, label: "Add Billing" },
     // { id: "blood-group-master-admin", icon: BarChart3, label: "Blood Group Master" },
-    { id: "counters-admin", icon: BarChart3, label: "Counters" },
-    { id: "hospital-admin", icon: BarChart3, label: "Hospital" },
+    // { id: "counters-admin", icon: BarChart3, label: "Counters" },
+    // { id: "hospital-admin", icon: BarChart3, label: "Hospital" },
     // { id: "settings", icon: Settings, label: "Settings" },
   ]
 

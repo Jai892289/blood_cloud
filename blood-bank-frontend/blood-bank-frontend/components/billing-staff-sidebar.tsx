@@ -14,7 +14,7 @@ interface CounterSidebarProps {
   onLogout?: () => void
 }
 
-export default function CounterSidebar({
+export default function BillingStaffSidebar({
   currentPage,
   setCurrentPage,
   onLogout,
@@ -23,10 +23,9 @@ export default function CounterSidebar({
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "new-billing", label: "New Billing", icon: FilePlus },
-    { id: "billing-history", label: "Billing History", icon: ClipboardList },
-        { id: "history", label: "Refernce List", icon: LayoutDashboard },
+           { id: "billing-history", icon: LayoutDashboard, label: "Billing History" },
 
+    
   ];
 
   // 🧩 Open confirmation popup

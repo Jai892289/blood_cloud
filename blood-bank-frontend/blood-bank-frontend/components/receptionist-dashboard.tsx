@@ -7,6 +7,8 @@ import CounterNewBilling from "@/components/pages/counter-new-billing"
 import CounterBillingHistory from "@/components/pages/counter-billing-history"
 import CounterReports from "@/components/pages/counter-reports"
 import CounterSettings from "@/components/pages/counter-settings"
+import Dashboard from "./pages/dashboard"
+import PatientInformationForReception from "./pages/rec-patient-inform"
 import ReferenceListPage from "./pages/reference-list"
 
 interface CounterDashboardProps {
@@ -15,23 +17,23 @@ interface CounterDashboardProps {
   onLogout: () => void
 }
 
-export default function CounterDashboard({ userName, counterId, onLogout }: CounterDashboardProps) {
+export default function ReceptionistDashboard({ userName, counterId, onLogout }: CounterDashboardProps) {
   const [currentPage, setCurrentPage] = useState("dashboard")
 
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <CounterHomePage setCurrentPage={setCurrentPage} />
-      case "new-billing":
-        return <CounterNewBilling />
-      case "billing-history":
-        return <CounterBillingHistory />
-      case "reports":
-        return <CounterReports />
-      case "settings":
-        return <CounterSettings userName={userName} counterId={counterId} />
-          case "history":
-                return <ReferenceListPage />
+                return <PatientInformationForReception />
+        
+        // return <CounterHomePage setCurrentPage={setCurrentPage} />
+      case "history":
+        return <ReferenceListPage />
+    //   case "billing-history":
+    //     return <CounterBillingHistory />
+    //   case "reports":
+    //     return <CounterReports />
+    //   case "settings":
+    //     return <CounterSettings userName={userName} counterId={counterId} />
       default:
         return <CounterHomePage />
     }
@@ -39,7 +41,7 @@ export default function CounterDashboard({ userName, counterId, onLogout }: Coun
 
   return (
     <LayoutWrapper
-      userRole="Counter"
+      userRole="Receptionist"
       userName={userName}
       counterId={counterId}
       currentPage={currentPage}

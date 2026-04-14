@@ -19,7 +19,7 @@ interface AdminDashboardProps {
   onLogout: () => void
 }
 
-export default function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
+export default function AccountantDashboard({ userName, onLogout }: AdminDashboardProps) {
   const [currentPage, setCurrentPage] = useState("dashboard")
 
   const renderPage = () => {
@@ -38,12 +38,12 @@ export default function AdminDashboard({ userName, onLogout }: AdminDashboardPro
         return <BloodComponentMasterAdmin />
       case "blood-group-master-admin":
         return <BloodGroupMasterAdmin />
-      case "counters-admin":
-        return <CountersAdmin />
-        case "hospital-admin":
-        return <HospitalAdmin />
-case "add-billing":
-        return <CounterNewBilling />
+      case "billing-history":
+        return <CounterBillingHistory />
+//         case "hospital-admin":
+//         return <HospitalAdmin />
+// case "add-billing":
+//         return <CounterNewBilling />
         
       default:
         return <Dashboard />
@@ -52,7 +52,7 @@ case "add-billing":
 
   return (
     <LayoutWrapper
-      userRole="Admin"
+      userRole="Accountant"
       userName={userName}
       currentPage={currentPage}
       onPageChange={setCurrentPage}

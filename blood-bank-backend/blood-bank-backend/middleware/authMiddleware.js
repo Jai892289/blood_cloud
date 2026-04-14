@@ -47,7 +47,7 @@ export const isCounterOrAdmin = (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized. Please login." });
   }
 
-  if (req.user.role !== "Admin" && req.user.role !== "Counter") {
+  if (req.user.role !== "Admin" && req.user.role !== "Counter" && req.user.role !== "Accountant" && req.user.role !== "Billing_Staff" && req.user.role !== "Receptionist") {
     return res.status(403).json({ message: "Access denied. Only Admin or Counter users allowed." });
   }
 

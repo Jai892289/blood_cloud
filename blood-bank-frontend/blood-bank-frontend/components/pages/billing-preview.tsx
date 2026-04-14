@@ -1,5 +1,7 @@
 "use client"
 
+import { CloudCog } from "lucide-react"
+
 interface PatientData {
   slNo: string
   billNo: string
@@ -36,6 +38,26 @@ interface BillingPreviewProps {
 export default function BillingPreview({ patientData, components, totalAmount }: BillingPreviewProps) {
   const amountInWords = convertAmountToWords(totalAmount)
 
+  const parsedPatientData = {
+  ...patientData,
+  age: patientData.age ? JSON.parse(patientData.age) : null,
+};
+
+  console.log("patientData", patientData)
+
+  const formatAge = (age: any) => {
+  if (!age) return "N/A";
+
+  const a = typeof age === "string" ? JSON.parse(age) : age;
+
+  const parts = [];
+  if (a.y) parts.push(`${a.y}y`);
+  if (a.m) parts.push(`${a.m}m`);
+  if (a.d) parts.push(`${a.d}d`);
+
+  return parts.join(" ") || "0d";
+};
+
   return (
     <div className="space-y-4">
       {/* Header Card */}
@@ -55,6 +77,14 @@ export default function BillingPreview({ patientData, components, totalAmount }:
             <span className="text-muted-foreground">Patient:</span>
             <span className="font-semibold">{patientData.patientName || "N/A"}</span>
           </div>
+
+          <div className="flex justify-between">
+  <span className="text-muted-foreground">Age:</span>
+ <span className="font-semibold">
+  {formatAge(parsedPatientData.age)}
+</span>
+</div>
+          
           <div className="flex justify-between">
             <span className="text-muted-foreground">Mobile NO.:</span>
             <span className="font-semibold">{patientData.mobileNumber || "N/A"}</span>

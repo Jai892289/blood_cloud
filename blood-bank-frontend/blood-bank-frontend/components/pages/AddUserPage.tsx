@@ -263,6 +263,13 @@ if (secretKey !== SECRET) {
                                 >
                                     <option value="Admin">Admin</option>
                                     <option value="Counter">Counter</option>
+                                    <option value="Accountant">Accountant</option>
+                                    <option value="Billing_Staff">Billing Staff</option>
+            <option value="Receptionist">Receptionist</option>
+
+                                    
+
+                                    
                                 </select>
                             </div>
 

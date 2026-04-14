@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, integer, boolean, numeric, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, integer, boolean, numeric, timestamp, jsonb, text } from "drizzle-orm/pg-core";
 
 /* -------------------- USERS TABLE -------------------- */
 export const users = pgTable("users", {
@@ -32,13 +32,17 @@ export const billings = pgTable("billings", {
   id: serial("id").primaryKey(),
 
   // 🧾 Bill Info
-  bill_no: varchar("bill_no", { length: 50 }).notNull(),
+  // bill_no: varchar("bill_no", { length: 50 }).notNull(),
+  bill_no: varchar("bill_no", { length: 50 }),
+  reference_id: varchar("reference_id", { length: 50 }).unique(),
+status: varchar("status", { length: 20 }).default("PENDING"),
   date: timestamp("date").defaultNow(),
 
   // 👨‍⚕️ Patient Info
   patient_name: varchar("patient_name", { length: 100 }).notNull(),
   sex: varchar("sex", { length: 10 }).notNull(),
-  age: integer("age").notNull(),
+  age: text("age").notNull(),
+// age: numeric("age", { precision: 5, scale: 2 }).notNull(),
   mobile_number: varchar("mobile_number", { length: 15 }),
   father_husband_name: varchar("father_husband_name", { length: 100 }),
   hospital_name: varchar("hospital_name", { length: 150 }),
@@ -50,13 +54,17 @@ export const billings = pgTable("billings", {
 payment_details: jsonb("payment_details"),
   hos_bill: varchar("hos_bill", { length: 50 }),
   hos_pat_reg: varchar("hos_pat_reg", { length: 50 }),
+  is_cancelled: boolean("is_cancelled").default(false),
+cancel_remark: text("cancel_remark"),
+cancelled_at: timestamp("cancelled_at"),
 
-
+blood_component_details: jsonb("blood_component_details"),
+total_amount: numeric("total_amount", { precision: 12, scale: 2 }),
   // 💉 Blood Component Details (JSON)
-  blood_component_details: jsonb("blood_component_details").notNull(),
+  // blood_component_details: jsonb("blood_component_details").notNull(),
 
   // 🧮 Totals
-  total_amount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  // total_amount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
 
   // 👤 User Info (optional FK)
   user_id: integer("user_id")
@@ -128,6 +136,19 @@ export const blood_component_master = pgTable("blood_component_master", {
   id: serial("id").primaryKey(),
   component_name: varchar("component_name", { length: 100 }).notNull(),
   description: varchar("description", { length: 255 }),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+
+/*--------------------------ADD HOSPITAL ------------------------------*/
+
+export const hospitals = pgTable("hospitals", {
+  id: serial("id").primaryKey(),
+  hospital_name: varchar("hospital_name", { length: 150 }).notNull(),
+  commission: numeric("commission", { precision: 5, scale: 2 }).default("0"),
+  serial_no: integer("serial_no").notNull(),
   is_active: boolean("is_active").default(true),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),

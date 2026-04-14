@@ -14,6 +14,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import bloodGroupMasterRoutes from "./routes/bloodGroupMasterRoutes.js";
 import bloodComponentRoutes from "./routes/bloodComponentRoutes.js";
 import countersRoutes from "./routes/countersRoutes.js";
+import hospitalRoutes from "./routes/hospitalRoute.js";
 import https from "https";
 import fs from "fs";
 
@@ -58,9 +59,17 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/counters", countersRoutes);
 app.use("/api/blood-component-master", bloodComponentRoutes);
 app.use("/api/blood-group-master", bloodGroupMasterRoutes);
+app.use("/api/hospital-master",hospitalRoutes);
 
+
+app.get("/test", (req, res) => {
+  console.log("sdfsdfsdfsdfsdfsdfsdf")
+  res.send("Working");
+});
 
 const PORT = process.env.PORT || 5000;
+
+console.log("DB URL:", process.env.DATABASE_URL);
 
 checkDatabaseConnection().then(() => {
   const options = {
@@ -75,7 +84,7 @@ checkDatabaseConnection().then(() => {
 
 // const PORT = process.env.PORT || 5000;
 
-// // ✅ Start after DB connected
+// ✅ Start after DB connected
 // checkDatabaseConnection().then(() => {
 //   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 // });

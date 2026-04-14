@@ -7,8 +7,11 @@ import CounterDashboard from "@/components/counter-dashboard"
 import AddUserPage from "@/components/pages/AddUserPage"
 // import AddUserPage from "@/components/add-user-page"  // ⬅ NEW
 import { Toaster } from "react-hot-toast";
+import AccountantDashboard from "@/components/accountant-dashboard"
+import BillingStaffDashboard from "@/components/billing-staff-dashboard"
+import ReceptionistDashboard from "@/components/receptionist-dashboard"
 
-type UserRole = "Admin" | "Counter" | null
+type UserRole = "Admin" | "Counter" | "Accountant"|"Billing_Staff" | "Receptionist" | null
 
 export default function Home() {
   const [userRole, setUserRole] = useState<UserRole>(null)
@@ -64,6 +67,8 @@ export default function Home() {
     )
   }
 
+  console.log("userRole", userRole)
+
   // ⬅ Show AddUserPage Instead of Login
   if (showAddUser) {
     return <AddUserPage onBack={() => setShowAddUser(false)} />
@@ -92,7 +97,17 @@ export default function Home() {
 
   return userRole === "Admin" ? (
     <AdminDashboard userName={userName} onLogout={handleLogout} />
-  ) : (
+  ) 
+  : userRole === "Accountant" ? (
+    <AccountantDashboard userName={userName} onLogout={handleLogout} />
+  ) : userRole === "Billing_Staff" ? (
+    <BillingStaffDashboard userName={userName} onLogout={handleLogout} counterId={counterId} />
+  )
+  : userRole === "Receptionist" ? (
+    <ReceptionistDashboard userName={userName} onLogout={handleLogout} counterId={counterId} />
+  )
+  : 
+  (
     <CounterDashboard
       userName={userName}
       counterId={counterId}

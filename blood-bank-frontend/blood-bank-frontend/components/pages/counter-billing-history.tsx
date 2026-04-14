@@ -20,7 +20,7 @@ interface BillingRecord {
   total_amount: number;
   is_paid: boolean;
   payment_method: string;
-  payment_details:any;
+  payment_details: any;
   sex?: string;
   age?: number;
   mobile_number?: string;
@@ -59,13 +59,13 @@ export default function CounterBillingHistory() {
   // });
 
   const [filters, setFilters] = useState({
-  fromDate: "",
-  toDate: "",
-  category: "All",
-  patientName: "",
-  mobileNumber: "",
-  paymentMethod: "All",
-});
+    fromDate: "",
+    toDate: "",
+    category: "All",
+    patientName: "",
+    mobileNumber: "",
+    paymentMethod: "All",
+  });
 
   const fetchCategories = async () => {
     try {
@@ -73,7 +73,7 @@ export default function CounterBillingHistory() {
       const list = res.data.data || [];
 
       // Extract Unique Category Names
-      const uniqueCategories:any = [...new Set(list.map((item: any) => item.category))];
+      const uniqueCategories: any = [...new Set(list.map((item: any) => item.category))];
 
       setCategories(uniqueCategories);
     } catch (err) {
@@ -82,46 +82,100 @@ export default function CounterBillingHistory() {
   };
 
   // 🩸 Fetch Billing Data (with filters)
-  const fetchBillings = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // const fetchBillings = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
 
-      const userId = localStorage.getItem("userId"); // 👈 get from localStorage
+  //     const userId = localStorage.getItem("userId"); // 👈 get from localStorage
 
-      const params: any = {
-        page,
-        limit,
-      };
+  //     const params: any = {
+  //       page,
+  //       limit,
+  //     };
 
-      // Apply filters
-      if (filters.fromDate) params.fromDate = filters.fromDate;
-      if (filters.toDate) params.toDate = filters.toDate;
-      if (filters.patientName) params.patient_name = filters.patientName;
-if (filters.mobileNumber) params.mobile_number = filters.mobileNumber;
-if (filters.paymentMethod && filters.paymentMethod !== "All") {
-  params.payment_method = filters.paymentMethod;
-}
-      if (filters.category && filters.category !== "All")
-        params.particulars = filters.category;
+  //     // Apply filters
+  //     if (filters.fromDate) params.fromDate = filters.fromDate;
+  //     if (filters.toDate) params.toDate = filters.toDate;
+  //     if (filters.patientName) params.patient_name = filters.patientName;
+  //     if (filters.mobileNumber) params.mobile_number = filters.mobileNumber;
+  //     if (filters.paymentMethod && filters.paymentMethod !== "All") {
+  //       params.payment_method = filters.paymentMethod;
+  //     }
+  //     if (filters.category && filters.category !== "All")
+  //       params.particulars = filters.category;
 
-      // ⭐ ADD USER ID (optional)
-      if (userId) params.user_id = userId;
+  //     // ⭐ ADD USER ID (optional)
+  //     if (userId) params.user_id = userId;
 
-      const res = await axiosInstance.get(ProjectApiList.billings, { params });
+  //     const res = await axiosInstance.get(ProjectApiList.billings, { params });
 
-      const { data, totalPages, totalRecords } = res.data;
+  //     const { data, totalPages, totalRecords } = res.data;
 
-      setBillingRecords(data || []);
-      setPagination({ totalPages, totalRecords });
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch billing records.");
-    } finally {
-      setLoading(false);
+  //     setBillingRecords(data || []);
+  //     setPagination({ totalPages, totalRecords });
+  //   } catch (err) {
+  //     console.error(err);
+  //     setError("Failed to fetch billing records.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+const fetchBillings = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const roleRaw = localStorage.getItem("userRole");
+    const role = roleRaw?.trim().toLowerCase();
+
+    // const isAdmin = role === "Admin";
+    // const isAccountant = role === "Accountant";
+    // const isBillingStaff = role === "Billing_Staff";
+    
+
+const isAdmin = role === "admin";
+const isAccountant = role === "accountant";
+const isBillingStaff = role === "billing_staff";
+
+    const params: any = {
+      page,
+      limit,
+    };
+
+    // ✅ Filters
+    if (filters.fromDate) params.fromDate = filters.fromDate;
+    if (filters.toDate) params.toDate = filters.toDate;
+    if (filters.patientName) params.patient_name = filters.patientName;
+    if (filters.mobileNumber) params.mobile_number = filters.mobileNumber;
+    if (filters.paymentMethod && filters.paymentMethod !== "All") {
+      params.payment_method = filters.paymentMethod;
     }
-  };
+    if (filters.category && filters.category !== "All") {
+      params.particulars = filters.category;
+    }
 
+    // ⭐ IMPORTANT FIX
+    if (!isAdmin && !isAccountant && !isBillingStaff) {
+      const userId = localStorage.getItem("userId");
+      if (userId) params.user_id = userId;
+    }
+
+    const res = await axiosInstance.get(ProjectApiList.billings, { params });
+
+    const { data, totalPages, totalRecords } = res.data;
+
+    setBillingRecords(data || []);
+    setPagination({ totalPages, totalRecords });
+
+  } catch (err) {
+    console.error(err);
+    setError("Failed to fetch billing records.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchBillings();
@@ -137,93 +191,226 @@ if (filters.paymentMethod && filters.paymentMethod !== "All") {
 
 
   const handleReset = () => {
-    setFilters({ fromDate: "", toDate: "", category: "All", patientName:"", mobileNumber:"" , paymentMethod: "All"});
+    setFilters({ fromDate: "", toDate: "", category: "All", patientName: "", mobileNumber: "", paymentMethod: "All" });
     setPage(1);
     fetchBillings();
   };
 
+    const roleRaw = localStorage.getItem("userRole");
+const isAccountant = roleRaw === "Accountant";
+const isBillingStaff = roleRaw === "Billing_Staff";
+const isAdmin = roleRaw === "Admin";
+
+
+
   const handleBulkExport = async () => {
-  try {
-    // 🔥 Fetch ALL data (ignore pagination)
-    const res = await axiosInstance.get(ProjectApiList.billings, {
-      params: {
-        page: 1,
-        limit: 10000, // large limit for full export
-      },
-    });
+try {
+// const userId = localStorage.getItem("userId");
 
-    const records = res.data.data || [];
 
-    let csvRows: string[] = [];
-
-    // ✅ CSV HEADER (matches your Excel)
-    csvRows.push([
-      "Bill No",
-      "Patient Name",
-      "Mobile",
-      "Hospital",
-      "Ward",
-      "Father/Husband",
-      "Date",
-      "Particulars",
-      "Quantity",
-      "Rate",
-      "Crossmatch",
-      "Bill Total",
-      "Paid",
-      "Payment Method",
-      "Remark",
-      "Txn / UTR",
-      "HOSPITAL PATIENT REG. NO",
-      "HOSPITAL BILL"
-    ].join(","));
-
-    // ✅ Flatten data (IMPORTANT)
-    records.forEach((record: any) => {
-      const components = record.blood_component_details || [];
-
-      components.forEach((item: any) => {
-        csvRows.push([
-          record.bill_no,
-          record.patient_name,
-          record.mobile_number,
-          record.hospital_name,
-          record.ward,
-          record.father_husband_name,
-          new Date(record.date).toLocaleDateString(),
-          item.particulars,
-          item.quantity,
-          item.rate,
-          item.crossmatch,
-          record.total_amount,
-          record.is_paid ? "Yes" : "No",
-          record.payment_method,
-          record.payment_details?.remarks || "",
-          record.payment_details?.utr || record.payment_details?.transaction_number || "",
-            record.hos_pat_reg || "",
-  record.hos_bill || "",
-        ].join(","));
-      });
-    });
-
-    // 📁 Create file
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "billing_export.csv";
-    link.click();
-
-  } catch (err) {
-    console.error("Export failed:", err);
-    alert("Failed to export data");
-  }
+const params: any = {
+  page: 1,
+  limit: 10000,
 };
 
-const role = localStorage.getItem("userRole");
+// ✅ Apply SAME filters
+if (filters.fromDate) params.fromDate = filters.fromDate;
+if (filters.toDate) params.toDate = filters.toDate;
+if (filters.patientName) params.patient_name = filters.patientName;
+if (filters.mobileNumber) params.mobile_number = filters.mobileNumber;
+
+if (filters.paymentMethod && filters.paymentMethod !== "All") {
+  params.payment_method = filters.paymentMethod;
+}
+
+if (filters.category && filters.category !== "All") {
+  params.particulars = filters.category;
+}
+
+if (!isAdmin && !isAccountant && !isBillingStaff) {
+  const userId = localStorage.getItem("userId");
+  if (userId) params.user_id = userId;
+}
+
+// if (userId) params.user_id = userId;
+
+// 🔥 Fetch filtered data
+const res = await axiosInstance.get(ProjectApiList.billings, { params });
+const records = res.data.data || [];
+
+// 🔥 Fetch hospitals for commission mapping
+const hospitalRes = await axiosInstance.get(ProjectApiList.hospitals);
+const hospitalMap: any = {};
+
+hospitalRes.data.data.forEach((h: any) => {
+  hospitalMap[h.hospital_name] = h.commission;
+});
+
+let csvRows: string[] = [];
+
+// ✅ HEADER
+csvRows.push([
+  "Bill No",
+  "Patient Name",
+  "Mobile",
+    ...(isAccountant ? ["Hospital", "Commission"] : []), 
+  // "Hospital",
+  // "Commission",
+  "Ward",
+  "Father/Husband",
+  "Date",
+  "Particulars",
+  "Quantity",
+  "Rate",
+  "Crossmatch",
+  "Bill Total",
+  "Paid",
+  "Payment Method",
+  "Remark",
+  "Txn / UTR",
+  "HOSPITAL PATIENT REG. NO",
+  "HOSPITAL BILL"
+].join(","));
+
+// ✅ DATA
+records.forEach((record: any) => {
+  const components = record.blood_component_details || [];
+
+  const rawCommission = hospitalMap[record.hospital_name];
+
+const commission =
+  rawCommission !== undefined && rawCommission !== null
+    ? `${rawCommission}%`
+    : "";
+
+  // const commission = hospitalMap[record.hospital_name] || "";
+
+  components.forEach((item: any) => {
+    csvRows.push([
+      record.bill_no,
+      record.patient_name,
+      record.mobile_number,
+      ...(isAccountant ? [record.hospital_name, commission] : []),
+      // record.hospital_name,
+      // commission, 
+      record.ward,
+      record.father_husband_name,
+      new Date(record.date).toLocaleDateString(),
+      item.particulars,
+      item.quantity,
+      item.rate,
+      item.crossmatch,
+      record.total_amount,
+      record.is_paid ? "Yes" : "No",
+      record.payment_method,
+      record.payment_details?.remarks || "",
+      record.payment_details?.utr || record.payment_details?.transaction_number || "",
+      record.hos_pat_reg || "",
+      record.hos_bill || "",
+    ].join(","));
+  });
+});
+
+// 📁 Download
+const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+const url = window.URL.createObjectURL(blob);
+
+const link = document.createElement("a");
+link.href = url;
+link.download = "billing_export.csv";
+link.click();
 
 
+} catch (err) {
+console.error("Export failed:", err);
+alert("Failed to export data");
+}
+};
+
+
+  // const handleBulkExport = async () => {
+  //   try {
+  //     // 🔥 Fetch ALL data (ignore pagination)
+  //     const res = await axiosInstance.get(ProjectApiList.billings, {
+  //       params: {
+  //         page: 1,
+  //         limit: 10000, // large limit for full export
+  //       },
+  //     });
+
+  //     const records = res.data.data || [];
+
+  //     let csvRows: string[] = [];
+
+  //     // ✅ CSV HEADER (matches your Excel)
+  //     csvRows.push([
+  //       "Bill No",
+  //       "Patient Name",
+  //       "Mobile",
+  //       "Hospital",
+  //       "Ward",
+  //       "Father/Husband",
+  //       "Date",
+  //       "Particulars",
+  //       "Quantity",
+  //       "Rate",
+  //       "Crossmatch",
+  //       "Bill Total",
+  //       "Paid",
+  //       "Payment Method",
+  //       "Remark",
+  //       "Txn / UTR",
+  //       "HOSPITAL PATIENT REG. NO",
+  //       "HOSPITAL BILL"
+  //     ].join(","));
+
+  //     // ✅ Flatten data (IMPORTANT)
+  //     records.forEach((record: any) => {
+  //       const components = record.blood_component_details || [];
+
+  //       components.forEach((item: any) => {
+  //         csvRows.push([
+  //           record.bill_no,
+  //           record.patient_name,
+  //           record.mobile_number,
+  //           record.hospital_name,
+  //           record.ward,
+  //           record.father_husband_name,
+  //           new Date(record.date).toLocaleDateString(),
+  //           item.particulars,
+  //           item.quantity,
+  //           item.rate,
+  //           item.crossmatch,
+  //           record.total_amount,
+  //           record.is_paid ? "Yes" : "No",
+  //           record.payment_method,
+  //           record.payment_details?.remarks || "",
+  //           record.payment_details?.utr || record.payment_details?.transaction_number || "",
+  //           record.hos_pat_reg || "",
+  //           record.hos_bill || "",
+  //         ].join(","));
+  //       });
+  //     });
+
+  //     // 📁 Create file
+  //     const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+  //     const url = window.URL.createObjectURL(blob);
+
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = "billing_export.csv";
+  //     link.click();
+
+  //   } catch (err) {
+  //     console.error("Export failed:", err);
+  //     alert("Failed to export data");
+  //   }
+  // };
+
+  const role = localStorage.getItem("userRole");
+  
+
+  console.log("rolerolerolerole", role)
 
 
   return (
@@ -235,22 +422,22 @@ const role = localStorage.getItem("userRole");
       </div> */}
 
       <div className="mb-8 flex justify-between items-center">
-  <div>
-    <h1 className="text-3xl font-bold text-gray-900">My Billing Records</h1>
-    <p className="text-gray-600">View and manage all your billing history</p>
-  </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">My Billing Records</h1>
+          <p className="text-gray-600">View and manage all your billing history</p>
+        </div>
 
- 
-    {role !== "Counter" && (
-<button
-    onClick={handleBulkExport}
-    className="bg-green-600 text-white cursor-pointer px-5 py-2 rounded-md font-semibold hover:bg-green-700"
-  >
-    Bulk Export
-  </button>    )}
-  
-  
-</div>
+
+{(isAccountant || isBillingStaff) && (       
+     <button
+            onClick={handleBulkExport}
+            className="bg-green-600 text-white cursor-pointer px-5 py-2 rounded-md font-semibold hover:bg-green-700"
+          >
+            Bulk Export
+          </button>
+        )}
+
+      </div>
 
       {/* Filters */}
       <form
@@ -303,7 +490,7 @@ const role = localStorage.getItem("userRole");
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-               Category
+              Category
             </label>
             <select
               value={filters.category}
@@ -324,56 +511,61 @@ const role = localStorage.getItem("userRole");
           </div>
         </div>
 
+  {role !== "Counter" && (
         <div className="grid grid-cols-3 gap-6 mt-4">
 
-  {/* Patient Name */}
-  <div>
-    <label className="block text-sm font-medium mb-2">Patient Name</label>
-    <input
-      type="text"
-      value={filters.patientName}
-      onChange={(e) =>
-        setFilters({ ...filters, patientName: e.target.value })
-      }
-      className="w-full px-4 py-2 border rounded-lg"
-      placeholder="Search by name"
-    />
-  </div>
+          {/* Patient Name */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Patient Name</label>
+            <input
+              type="text"
+              value={filters.patientName}
+              onChange={(e) =>
+                setFilters({ ...filters, patientName: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="Search by name"
+            />
+          </div>
 
-  {/* Mobile Number */}
-  <div>
-    <label className="block text-sm font-medium mb-2">Mobile Number</label>
-    <input
-      type="text"
-      value={filters.mobileNumber}
-      onChange={(e) =>
-        setFilters({ ...filters, mobileNumber: e.target.value })
-      }
-      className="w-full px-4 py-2 border rounded-lg"
-      placeholder="Search by mobile"
-    />
-  </div>
+          {/* Mobile Number */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Mobile Number</label>
+            <input
+              type="text"
+              value={filters.mobileNumber}
+              onChange={(e) =>
+                setFilters({ ...filters, mobileNumber: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="Search by mobile"
+            />
+          </div>
 
-  {/* Payment Method */}
-  <div>
-    <label className="block text-sm font-medium mb-2">Payment Method</label>
-    <select
-      value={filters.paymentMethod}
-      onChange={(e) =>
-        setFilters({ ...filters, paymentMethod: e.target.value })
-      }
-      className="w-full px-4 py-2 border rounded-lg"
-    >
-      <option value="All">All</option>
-      <option value="Cash">Cash</option>
-      <option value="Card">Card</option>
-      <option value="FOC">FOC</option>
-      <option value="Credit">Credit</option>
-      <option value="Bank">Bank</option>
-    </select>
-  </div>
+          {/* Payment Method */}
+                
 
-</div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Payment Method</label>
+            <select
+              value={filters.paymentMethod}
+              onChange={(e) =>
+                setFilters({ ...filters, paymentMethod: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded-lg"
+            >
+              <option value="All">All</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="FOC">FOC</option>
+              <option value="Credit">Credit</option>
+              <option value="Bank">Bank</option>
+              <option value="Discount">Discount</option>
+            </select>
+          </div>
+                  
+        </div>
+  )}
 
         <div className="flex justify-end gap-4 mt-6">
           <button
@@ -415,8 +607,10 @@ const role = localStorage.getItem("userRole");
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Patient</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Components</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Total Amount</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Is Paid</th>
+                  {/* <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Is Paid</th> */}
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Payment Method</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>   {/* NEW */}
+<th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Remarks</th> {/* NEW */}
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
                 </tr>
               </thead>
@@ -436,7 +630,7 @@ const role = localStorage.getItem("userRole");
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">
                       ₹{record.total_amount}
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    {/* <td className="px-6 py-4 text-sm">
                       {record.is_paid ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Paid
@@ -446,10 +640,33 @@ const role = localStorage.getItem("userRole");
                           Unpaid
                         </span>
                       )}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {record.payment_method || "-"}
                     </td>
+                    
+                    <td className="px-6 py-4 text-sm">
+  {record.is_cancelled ? (
+    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-200 text-gray-800">
+      Cancelled
+    </span>
+  ) : record.is_paid ? (
+    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      Paid
+    </span>
+  ) : (
+    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+      Unpaid
+    </span>
+  )}
+</td>
+
+{/* ✅ REMARKS */}
+<td className="px-6 py-4 text-sm text-gray-700">
+  {record.payment_details?.remarks ||
+   record?.cancel_remark ||
+   "-"}
+</td>
                     <td className="px-6 py-4 text-sm flex gap-2">
                       <button
                         title="View Details"
@@ -524,201 +741,219 @@ const role = localStorage.getItem("userRole");
 
       {/* 🧾 View Details Modal */}
       {selectedRecord && (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 a4-modal-wrapper">
-    
-    <div className="bg-white shadow-2xl rounded-lg p-8 relative border border-gray-300 overflow-visible a4-container">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 a4-modal-wrapper">
 
-      {/* 🔴 WATERMARK */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <p className="text-[110px] font-extrabold text-red-300 opacity-10 rotate-[-30deg] tracking-widest select-none">
-          DUPLICATE COPY
-        </p>
-      </div>
+          <div className="bg-white shadow-2xl rounded-lg p-8 relative border border-gray-300 overflow-visible a4-container">
 
-      {/* ✅ ACTUAL CONTENT (above watermark) */}
-      <div className="relative z-10">
-
-        {/* HEADER */}
-        <div className="relative text-center mb-6">
-
-          <img
-            src="/icon.png"
-            alt="Left Logo"
-            className="absolute left-4 top-2 w-16 h-16 object-contain"
-          />
-
-          <img
-            src="/icon2.png"
-            alt="Right Logo"
-            className="absolute right-4 top-2 w-16 h-16 object-contain"
-          />
-
-          <h1 className="text-3xl font-extrabold mt-1">
-            <span className="text-teal-600">ORCHID</span>{" "}
-            <span className="text-red-600">BLOOD CENTER</span>
-          </h1>
-
-          <p className="text-sm text-gray-700 font-medium">
-            Managed By Shonit Foundation
-          </p>
-
-          <p className="text-sm text-gray-700 mt-1">
-            H.B. Road, Ranchi, Jharkhand-834001
-          </p>
-
-          <p className="text-sm text-gray-700 mt-1">
-            ☎ 0651-7100845  
-          </p>
-        </div>
-
-        {/* PATIENT INFO */}
-        <div className="mb-6 text-sm">
-          <div className="flex justify-between">
-            <div>
-              <p><strong>Bill No:</strong> {selectedRecord.bill_no}</p>
-              <p><strong>Patient Name:</strong> {selectedRecord.patient_name}</p>
-              <p><strong>Age:</strong> {selectedRecord.age} Yr</p>
-              <p><strong>Sex:</strong> {selectedRecord.sex}</p>
-              <p><strong>Mobile:</strong> {selectedRecord.mobile_number}</p>
-              <p><strong>Hospital:</strong> {selectedRecord.hospital_name}</p>
+            {/* 🔴 WATERMARK */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+              <p className="text-[110px] font-extrabold text-red-300 opacity-10 rotate-[-30deg] tracking-widest select-none">
+                DUPLICATE COPY
+              </p>
             </div>
 
-            <div className="text-right">
-              <p><strong>Ward:</strong> {selectedRecord.ward}</p>
-              <p><strong>IPD No:</strong> {selectedRecord.ipd_no}</p>
-              {/* <p><strong>Total:</strong> ₹{selectedRecord.total_amount}</p> */}
+            {/* ✅ ACTUAL CONTENT (above watermark) */}
+            <div className="relative z-10">
+
+              {/* HEADER */}
+              <div className="relative text-center mb-6">
+
+                <img
+                  src="/icon.png"
+                  alt="Left Logo"
+                  className="absolute left-4 top-2 w-16 h-16 object-contain"
+                />
+
+                <img
+                  src="/icon2.png"
+                  alt="Right Logo"
+                  className="absolute right-4 top-2 w-16 h-16 object-contain"
+                />
+
+                <h1 className="text-3xl font-extrabold mt-1">
+                  <span className="text-teal-600">ORCHID</span>{" "}
+                  <span className="text-red-600">BLOOD CENTER</span>
+                </h1>
+
+                <p className="text-sm text-gray-700 font-medium">
+                  Managed By Shonit Foundation
+                </p>
+
+                <p className="text-sm text-gray-700 mt-1">
+                  H.B. Road, Ranchi, Jharkhand-834001
+                </p>
+
+                <p className="text-sm text-gray-700 mt-1">
+                  ☎ 0651-7100845
+                </p>
+              </div>
+
+              {/* PATIENT INFO */}
+              <div className="mb-6 text-sm">
+                <div className="flex justify-between">
+                  <div>
+                    <p><strong>Bill No:</strong> {selectedRecord.bill_no}</p>
+                    <p><strong>Patient Name:</strong> {selectedRecord.patient_name}</p>
+                    {/* <p><strong>Age:</strong> {selectedRecord.age} Yr</p> */}
+                    <p>
+  <strong>Age:</strong>{" "}
+  {(() => {
+    if (!selectedRecord.age) return "N/A";
+
+    const ageObj =
+      typeof selectedRecord.age === "string"
+        ? JSON.parse(selectedRecord.age)
+        : selectedRecord.age;
+
+    const parts = [];
+    if (ageObj.y) parts.push(`${ageObj.y}y`);
+    if (ageObj.m) parts.push(`${ageObj.m}m`);
+    if (ageObj.d) parts.push(`${ageObj.d}d`);
+
+    return parts.join(" ");
+  })()}
+</p>
+                    <p><strong>Sex:</strong> {selectedRecord.sex}</p>
+                    <p><strong>Mobile:</strong> {selectedRecord.mobile_number}</p>
+                    <p><strong>Hospital:</strong> {selectedRecord.hospital_name}</p>
+                  </div>
+
+                  <div className="text-right">
+                    <p><strong>Ward:</strong> {selectedRecord.ward}</p>
+                    <p><strong>IPD No:</strong> {selectedRecord.ipd_no}</p>
+                    {/* <p><strong>Total:</strong> ₹{selectedRecord.total_amount}</p> */}
+                  </div>
+                </div>
+              </div>
+
+              {/* TABLE */}
+              <div className="border border-black">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr>
+                      <th className="border px-3 py-2">SL</th>
+                      <th className="border px-3 py-2 text-left">PARTICULARS</th>
+                      <th className="border px-3 py-2">QUANTITY</th>
+                      <th className="border px-3 py-2">PROCESSING CHARGE</th>
+                      <th className="border px-3 py-2">CROSSMATCH BY GEL TECHNOLOGY</th>
+                      <th className="border px-3 py-2">AMOUNT</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {selectedRecord.blood_component_details.map((item, i) => (
+                      <tr key={i}>
+                        <td className="border px-3 py-2 text-center">
+                          {i + 1}
+                        </td>
+
+                        <td className="border px-3 py-2 font-medium text-gray-800">
+                          {item.particulars}
+                        </td>
+
+                        <td className="border px-3 py-2 text-center">
+                          {item.quantity}
+                        </td>
+
+                        <td className="border px-3 py-2 text-center">
+                          ₹{item.rate}
+                        </td>
+
+                        <td className="border px-3 py-2 text-center">
+                          {item.crossmatch}
+                        </td>
+
+                        <td className="border px-3 py-2 text-right font-semibold">
+                          ₹{item.amount}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* GROSS TOTAL */}
+                    <tr>
+                      <td colSpan={3} className="border px-3 py-2"></td>
+                      <td className="border px-3 py-2 text-center font-bold">
+                        GROSS TOTAL
+                      </td>
+                      <td colSpan={2} className="border px-3 py-2 text-right font-semibold">
+                        ₹{selectedRecord.total_amount}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAYMENT DETAILS */}
+              <div className="mt-4">
+                <p>
+                  <strong>Payment Mode:</strong> {selectedRecord.payment_method}
+                </p>
+
+                {selectedRecord.payment_method !== "CASH" && (
+                  <>
+                    {selectedRecord.payment_details?.transactionNumber && (
+                      <p>
+                        <strong>Transaction No:</strong>{" "}
+                        {selectedRecord.payment_details.transactionNumber}
+                      </p>
+                    )}
+
+                    {selectedRecord.payment_details?.utr && (
+                      <p>
+                        <strong>UTR:</strong>{" "}
+                        {selectedRecord.payment_details.utr}
+                      </p>
+                    )}
+
+                    {selectedRecord.payment_details?.remarks && (
+                      <p>
+                        <strong>Remarks:</strong>{" "}
+                        {selectedRecord.payment_details.remarks}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* FOOTER */}
+              <div className="mt-3 flex justify-between">
+                <p className="text-sm">
+                  <strong>Rupees in words:</strong>{" "}
+                  {numberToWordsIndian(selectedRecord.total_amount)} Only
+                </p>
+
+                <div className="text-right">
+                  <p className="font-semibold">Authorized Signature</p>
+                  <div className="h-[50px] w-[150px] border-b border-gray-400 mt-6 mx-auto"></div>
+                </div>
+              </div>
+
+              <p className="mt-2">
+                <strong>Status:</strong>{" "}
+                {selectedRecord.is_paid ? "Paid" : "Unpaid"}
+              </p>
+
+              {/* BUTTONS */}
+              <div className="flex justify-end gap-3 mt-8 no-print">
+                <button
+                  onClick={() => setSelectedRecord(null)}
+                  className="px-4 py-2 border rounded-md"
+                >
+                  Close
+                </button>
+
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                >
+                  Print
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
-
-        {/* TABLE */}
-        <div className="border border-black">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="border px-3 py-2">SL</th>
-                <th className="border px-3 py-2 text-left">PARTICULARS</th>
-                <th className="border px-3 py-2">QUANTITY</th>
-                <th className="border px-3 py-2">PROCESSING CHARGE</th>
-                <th className="border px-3 py-2">CROSSMATCH BY GEL TECHNOLOGY</th>
-                <th className="border px-3 py-2">AMOUNT</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {selectedRecord.blood_component_details.map((item, i) => (
-                <tr key={i}>
-                  <td className="border px-3 py-2 text-center">
-                    { i + 1}
-                  </td>
-
-                  <td className="border px-3 py-2 font-medium text-gray-800">
-                    {item.particulars}
-                  </td>
-
-                  <td className="border px-3 py-2 text-center">
-                    {item.quantity}
-                  </td>
-
-                  <td className="border px-3 py-2 text-center">
-                    ₹{item.rate}
-                  </td>
-
-                  <td className="border px-3 py-2 text-center">
-                    {item.crossmatch}
-                  </td>
-
-                  <td className="border px-3 py-2 text-right font-semibold">
-                    ₹{item.amount}
-                  </td>
-                </tr>
-              ))}
-
-              {/* GROSS TOTAL */}
-              <tr>
-                <td colSpan={3} className="border px-3 py-2"></td>
-                <td className="border px-3 py-2 text-center font-bold">
-                  GROSS TOTAL
-                </td>
-                <td colSpan={2} className="border px-3 py-2 text-right font-semibold">
-                  ₹{selectedRecord.total_amount}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* PAYMENT DETAILS */}
-        <div className="mt-4">
-          <p>
-            <strong>Payment Mode:</strong> {selectedRecord.payment_method}
-          </p>
-
-          {selectedRecord.payment_method !== "CASH" && (
-            <>
-              {selectedRecord.payment_details?.transactionNumber && (
-                <p>
-                  <strong>Transaction No:</strong>{" "}
-                  {selectedRecord.payment_details.transactionNumber}
-                </p>
-              )}
-
-              {selectedRecord.payment_details?.utr && (
-                <p>
-                  <strong>UTR:</strong>{" "}
-                  {selectedRecord.payment_details.utr}
-                </p>
-              )}
-
-              {selectedRecord.payment_details?.remarks && (
-                <p>
-                  <strong>Remarks:</strong>{" "}
-                  {selectedRecord.payment_details.remarks}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* FOOTER */}
-        <div className="mt-3 flex justify-between">
-          <p className="text-sm">
-            <strong>Rupees in words:</strong>{" "}
-            {numberToWordsIndian(selectedRecord.total_amount)} Only
-          </p>
-
-          <div className="text-right">
-            <p className="font-semibold">Authorized Signature</p>
-            <div className="h-[50px] w-[150px] border-b border-gray-400 mt-6 mx-auto"></div>
-          </div>
-        </div>
-
-        <p className="mt-2">
-          <strong>Status:</strong>{" "}
-          {selectedRecord.is_paid ? "Paid" : "Unpaid"}
-        </p>
-
-        {/* BUTTONS */}
-        <div className="flex justify-end gap-3 mt-8 no-print">
-          <button
-            onClick={() => setSelectedRecord(null)}
-            className="px-4 py-2 border rounded-md"
-          >
-            Close
-          </button>
-
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md"
-          >
-            Print
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
 
     </div>

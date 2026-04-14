@@ -21,6 +21,9 @@ const ProjectApiList = {
   bloodComponentMaster: "blood-component-master",
   counters: "counters",
 
+    hospitals: "/hospital-master/hospitals",
+
+
   // 👥 Users
   // getAllUsers: "/users",
   // getUserById: (id: number) => `/users/${id}`,

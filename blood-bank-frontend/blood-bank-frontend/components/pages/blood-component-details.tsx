@@ -6,6 +6,7 @@ import ProjectApiList from "@/components/api/ProjectApiList";
 import BloodComponentTable from "./blood-component-table";
 import BillingPreview from "./billing-preview";
 import { useRouter } from "next/navigation";
+import { CloudCog } from "lucide-react";
 
 interface PatientData {
   slNo: string;
@@ -25,6 +26,7 @@ interface PatientData {
   dateOfIPD: string;
   hos_pat_reg:string;
   hos_bill:string;
+  reference_id?:string;
 }
 
 interface BloodComponent {
@@ -157,16 +159,93 @@ if (paymentMethod === "Discount") {
 
   const user_id = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
+// const preparePayload = () => {
+//   const actualTotal = components.reduce(
+//     (sum, comp) => sum + Number(comp.amount || 0),
+//     0
+//   );
+
+//   const parsedAge = patientData.age ? JSON.parse(patientData.age) : null;
+
+
+//   return {
+//     patient_name: patientData.patientName,
+//     sex: patientData.sex,
+//     age: parsedAge || 0,   // or send full object if backend supports
+//     // age: Number(patientData.age),
+//     mobile_number: patientData.mobileNumber,
+//     father_husband_name: patientData.fatherHusbandName,
+//     hospital_name: patientData.hospitalName,
+//     referred_by_dr: patientData.referredByDr,
+//     crn: patientData.crn,
+//     ward: patientData.ward,
+//     bed: patientData.bed,
+//     ipd_no: patientData.ipdNo,
+//     user_id: Number(user_id),
+//     is_paid: isPaid,
+//     payment_method: paymentMethod,
+//      hos_pat_reg: patientData.hos_pat_reg,
+//   hos_bill: patientData.hos_bill,
+
+//     // ✅ ADD THIS LINE
+//     // total_amount: paymentMethod === "FOC" ? 0 : actualTotal,
+//     total_amount:
+//   paymentMethod === "FOC"
+//     ? 0
+//     : paymentMethod === "Discount"
+//     ? actualTotal - Number(discountAmount || 0)
+//     : actualTotal,
+
+//     blood_component_details: components.map((comp, index) => ({
+//       sno: index + 1,
+//       particulars: comp.particulars,
+//       quantity: comp.quantity,
+//       rate: comp.rate,
+//       crossmatch: comp.crossmatch ? "Yes" : "No",
+//       amount: comp.amount,
+//     })),
+
+//     payment_details:
+//      paymentMethod === "Discount"
+//     ? { discount_amount: discountAmount, remarks: discountRemarks }:
+//       paymentMethod === "FOC"
+//     ? {
+//         foc_type: focType,
+//         ...(focType === "MANAGEMENT" && { remarks: paymentDetails.remarks }),
+//       }:
+//       paymentMethod === "Card"
+//         ? { transaction_number: paymentDetails.transactionNumber }
+//         : paymentMethod === "Bank"
+//         ? { utr: paymentDetails.utr }
+//         : paymentMethod === "Credit" 
+//         ? { remarks: paymentDetails.remarks }
+//         : {},
+//   };
+// };
+
+
 const preparePayload = () => {
   const actualTotal = components.reduce(
     (sum, comp) => sum + Number(comp.amount || 0),
     0
   );
 
+  let parsedAge = null;
+
+  try {
+    parsedAge = patientData.age
+      ? typeof patientData.age === "string"
+        ? JSON.parse(patientData.age)
+        : patientData.age
+      : null;
+  } catch (e) {
+    console.log("Age parse error", e);
+  }
+
   return {
     patient_name: patientData.patientName,
     sex: patientData.sex,
-    age: Number(patientData.age),
+    age: parsedAge || 0,
     mobile_number: patientData.mobileNumber,
     father_husband_name: patientData.fatherHusbandName,
     hospital_name: patientData.hospitalName,
@@ -178,17 +257,18 @@ const preparePayload = () => {
     user_id: Number(user_id),
     is_paid: isPaid,
     payment_method: paymentMethod,
-     hos_pat_reg: patientData.hos_pat_reg,
-  hos_bill: patientData.hos_bill,
+    hos_pat_reg: patientData.hos_pat_reg,
+    hos_bill: patientData.hos_bill,
 
-    // ✅ ADD THIS LINE
-    // total_amount: paymentMethod === "FOC" ? 0 : actualTotal,
+    // 🔥 CRITICAL FIX (THIS SOLVES YOUR ISSUE)
+    reference_id: patientData.reference_id || null,
+
     total_amount:
-  paymentMethod === "FOC"
-    ? 0
-    : paymentMethod === "Discount"
-    ? actualTotal - Number(discountAmount || 0)
-    : actualTotal,
+      paymentMethod === "FOC"
+        ? 0
+        : paymentMethod === "Discount"
+        ? actualTotal - Number(discountAmount || 0)
+        : actualTotal,
 
     blood_component_details: components.map((comp, index) => ({
       sno: index + 1,
@@ -200,87 +280,28 @@ const preparePayload = () => {
     })),
 
     payment_details:
-     paymentMethod === "Discount"
-    ? { discount_amount: discountAmount, remarks: discountRemarks }:
-      paymentMethod === "FOC"
-    ? {
-        foc_type: focType,
-        ...(focType === "MANAGEMENT" && { remarks: paymentDetails.remarks }),
-      }:
-      paymentMethod === "Card"
+      paymentMethod === "Discount"
+        ? { discount_amount: discountAmount, remarks: discountRemarks }
+        : paymentMethod === "FOC"
+        ? {
+            foc_type: focType,
+            ...(focType === "MANAGEMENT" && {
+              remarks: paymentDetails.remarks,
+            }),
+          }
+        : paymentMethod === "Card"
         ? { transaction_number: paymentDetails.transactionNumber }
         : paymentMethod === "Bank"
         ? { utr: paymentDetails.utr }
-        : paymentMethod === "Credit" 
+        : paymentMethod === "Credit"
         ? { remarks: paymentDetails.remarks }
         : {},
   };
 };
 
-//   const preparePayload = () => ({
-//   patient_name: patientData.patientName,
-//   sex: patientData.sex,
-//   age: Number(patientData.age),
-//   mobile_number: patientData.mobileNumber,
-//   father_husband_name: patientData.fatherHusbandName,
-//   hospital_name: patientData.hospitalName,
-//   referred_by_dr: patientData.referredByDr,
-//   crn: patientData.crn,
-//   ward: patientData.ward,
-//   bed: patientData.bed,
-//   ipd_no: patientData.ipdNo,
-//   user_id: Number(user_id),
-//   is_paid: isPaid,
-//   payment_method: paymentMethod,
-
-//   blood_component_details: components.map((comp, index) => ({
-//     sno: index + 1,
-//     particulars: comp.particulars,
-//     quantity: comp.quantity,
-//     rate: comp.rate,
-//     crossmatch: comp.crossmatch ? "Yes" : "No",
-//     amount: comp.amount,
-//   })),
-
-//   // ✅ SMART PAYMENT DETAILS
-//   payment_details:
-//     paymentMethod === "Card"
-//       ? { transaction_number: paymentDetails.transactionNumber }
-//       : paymentMethod === "Bank"
-//       ? { utr: paymentDetails.utr }
-//       : paymentMethod === "Credit" || paymentMethod === "FOC"
-//       ? { remarks: paymentDetails.remarks }
-//       : {},
-// });
-
-  // const preparePayload = () => ({
-  //   patient_name: patientData.patientName,
-  //   sex: patientData.sex,
-  //   age: Number(patientData.age),
-  //   mobile_number: patientData.mobileNumber,
-  //   father_husband_name: patientData.fatherHusbandName,
-  //   hospital_name: patientData.hospitalName,
-  //   referred_by_dr: patientData.referredByDr,
-  //   crn: patientData.crn,
-  //   ward: patientData.ward,
-  //   bed: patientData.bed,
-  //   ipd_no: patientData.ipdNo,
-  //   user_id: Number(user_id),
-  //   is_paid: isPaid,
-  //   payment_method: paymentMethod,
-  //   blood_component_details: components.map((comp, index) => ({
-  //     sno: index + 1,
-  //     particulars: comp.particulars,
-  //     quantity: comp.quantity,
-  //     rate: comp.rate,
-  //     crossmatch: comp.crossmatch ? "Yes" : "No",
-  //     amount: comp.amount,
-  //   })),
-    
-  // });
-
   const handleFinalSubmit = async () => {
     const payload = preparePayload();
+    console.log("_------------------------------------", payload)
     setLoading(true);
     setMessage("");
     try {
@@ -702,7 +723,25 @@ const preparePayload = () => {
                 <div>
                   <p><strong>SL No:</strong> {patientData.slNo || "-"}</p>
                   <p className="mt-2"><strong>Patient’s Name:</strong> {patientData.patientName}</p>
-                  <p><strong>Age:</strong> {patientData.age} Yr</p>
+                  <p>
+  <strong>Age:</strong>{" "}
+  {(() => {
+    if (!patientData.age) return "N/A";
+
+    const ageObj =
+      typeof patientData.age === "string"
+        ? JSON.parse(patientData.age)
+        : patientData.age;
+
+    const parts = [];
+    if (ageObj.y) parts.push(`${ageObj.y}y`);
+    if (ageObj.m) parts.push(`${ageObj.m}m`);
+    if (ageObj.d) parts.push(`${ageObj.d}d`);
+
+    return parts.join(" ");
+  })()}
+</p>
+                  {/* <p><strong>Age:</strong> {patientData.age} Yr</p> */}
                   <p><strong>Father/Husband Name:</strong> {patientData.fatherHusbandName}</p>
                   <p><strong>Hospital Name:</strong> {patientData.hospitalName}</p>
                   {/* <p><strong>CRN:</strong> {patientData.crn}</p> */}

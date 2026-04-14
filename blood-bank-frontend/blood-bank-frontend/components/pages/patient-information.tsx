@@ -5,6 +5,7 @@ import { Header } from "./header";
 import axiosInstance from "../api/axiosInstance";
 import ProjectApiList from "../api/ProjectApiList";
 import { toast, Toaster } from "react-hot-toast";
+import { CloudCog } from "lucide-react";
 
 interface PatientData {
   slNo: string;
@@ -24,6 +25,10 @@ interface PatientData {
   // dateOfIPD: string
   hos_pat_reg: string;
   hos_bill: string;
+  ageYears?: string;
+  ageMonths?: string;
+  ageDays?: string;
+
 }
 
 interface PatientInformationProps {
@@ -81,6 +86,65 @@ export default function PatientInformation({
   });
 
   const [currentTime, setCurrentTime] = useState(getCurrentDateTime());
+  const [hospitals, setHospitals] = useState<any[]>([]);
+const [referenceInput, setReferenceInput] = useState("");
+
+const fetchByReference = async () => {
+  if (!referenceInput.trim()) {
+    toast.error("Enter Reference ID");
+    return;
+  }
+
+  try {
+    const res = await axiosInstance.get(
+      `/billings/ref/${referenceInput}`
+    );
+
+    const data = res.data;
+
+    // ✅ Parse age properly
+    let parsedAge = { y: "", m: "", d: "" };
+
+    try {
+      if (data.age) {
+        const ageObj = JSON.parse(data.age);
+
+        parsedAge = {
+          y: ageObj.y?.toString() || "",
+          m: ageObj.m?.toString() || "",
+          d: ageObj.d?.toString() || "",
+        };
+      }
+    } catch (e) {
+      console.log("Age parse error:", e);
+    }
+
+    // ✅ Set form data
+    setFormData((prev) => ({
+      ...prev,
+      patientName: data.patient_name || "",
+      sex: data.sex || "",
+      mobileNumber: data.mobile_number || "",
+      fatherHusbandName: data.father_husband_name || "",
+      hos_bill: data.hos_bill || "",
+  reference_id: data.reference_id,
+
+      // 🔥 IMPORTANT FIX
+      ageYears: parsedAge.y,
+      ageMonths: parsedAge.m,
+      ageDays: parsedAge.d,
+    }));
+
+    toast.success("Patient loaded");
+
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      toast.error("Reference not found");
+    } else {
+      toast.error("Error fetching data");
+    }
+  }
+};
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -94,58 +158,71 @@ export default function PatientInformation({
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const res = await axiosInstance.get(ProjectApiList.hospitals);
+        setHospitals(res.data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch hospitals");
+      }
+    };
+
+    fetchHospitals();
+  }, []);
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Load saved form data when component loads
-//   useEffect(() => {
-//     const saved = localStorage.getItem("patientFormData");
-//     if (saved) {
-//       setFormData(JSON.parse(saved));
-//     }
-//   }, []);
+  //   useEffect(() => {
+  //     const saved = localStorage.getItem("patientFormData");
+  //     if (saved) {
+  //       setFormData(JSON.parse(saved));
+  //     }
+  //   }, []);
 
-//   useEffect(() => {
-//     localStorage.setItem("patientFormData", JSON.stringify(formData));
-//   }, [formData]);
+  //   useEffect(() => {
+  //     localStorage.setItem("patientFormData", JSON.stringify(formData));
+  //   }, [formData]);
 
 
- const fetchPatientByMobile = async (mobile: string) => {
-  try {
-    const res = await axiosInstance.get(
-      `/billings/by-mobile/${mobile}`
-    );
+  const fetchPatientByMobile = async (mobile: string) => {
+    try {
+      const res = await axiosInstance.get(
+        `/billings/by-mobile/${mobile}`
+      );
 
-    const data = res.data.data;
+      const data = res.data.data;
 
-    toast.success("Existing patient found");
+      toast.success("Existing patient found");
 
-    setFormData(prev => ({
-      ...prev,
-      patientName: data.patient_name || "",
-      hos_bill:data.hos_bill || "",
-      age: data.age || "",
-      sex: data.sex || "",
-      fatherHusbandName: data.father_husband_name || "",
-    }));
-
-  } catch (err: any) {
-    if (err.response?.status === 404) {
-      toast("New patient", { icon: "🆕" });
-
-      // ✅ CLEAR patient fields
       setFormData(prev => ({
         ...prev,
-        patientName: "",
-        age: "",
-        sex: "",
-        fatherHusbandName: "",
-        hos_bill:""
+        patientName: data.patient_name || "",
+        hos_bill: data.hos_bill || "",
+        age: data.age || "",
+        sex: data.sex || "",
+        fatherHusbandName: data.father_husband_name || "",
       }));
-    } else {
-      toast.error("Error fetching patient");
+
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        toast("New patient", { icon: "🆕" });
+
+        // ✅ CLEAR patient fields
+        setFormData(prev => ({
+          ...prev,
+          patientName: "",
+          age: "",
+          sex: "",
+          fatherHusbandName: "",
+          hos_bill: ""
+        }));
+      } else {
+        toast.error("Error fetching patient");
+      }
     }
-  }
-};
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -175,17 +252,17 @@ export default function PatientInformation({
     // }
 
     if (name === "mobileNumber") {
-  const digits = value.replace(/\D/g, "").slice(0, 10);
+      const digits = value.replace(/\D/g, "").slice(0, 10);
 
-  setFormData(prev => ({ ...prev, mobileNumber: digits }));
-  setErrors(prev => ({ ...prev, mobileNumber: "" }));
+      setFormData(prev => ({ ...prev, mobileNumber: digits }));
+      setErrors(prev => ({ ...prev, mobileNumber: "" }));
 
-  if (digits.length === 10) {
-    fetchPatientByMobile(digits);
-  }
+      if (digits.length === 10) {
+        fetchPatientByMobile(digits);
+      }
 
-  return;
-}
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -201,8 +278,19 @@ export default function PatientInformation({
     if (!formData.patientName.trim())
       newErrors.patientName = "Patient name is required";
     if (!formData.sex) newErrors.sex = "Please select sex";
-    if (!formData.age || parseInt(formData.age) <= 0)
+
+    // if (!formData.age || parseInt(formData.age) <= 0)
+    //   newErrors.age = "Enter valid age";
+    //     if (!formData.age || parseFloat(formData.age) <= 0) {
+    //   newErrors.age = "Enter valid age";
+    // }
+    const y = Number((formData as any).ageYears || 0);
+    const m = Number((formData as any).ageMonths || 0);
+    const d = Number((formData as any).ageDays || 0);
+
+    if (y === 0 && m === 0 && d === 0) {
       newErrors.age = "Enter valid age";
+    }
     if (!formData.mobileNumber || formData.mobileNumber.length !== 10)
       newErrors.mobileNumber = "Enter valid 10-digit mobile number";
     if (!formData.fatherHusbandName.trim())
@@ -222,11 +310,30 @@ export default function PatientInformation({
     return Object.keys(newErrors).length === 0;
   };
 
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateForm()) {
-      onSubmit(formData);
+      // const finalAge: any = JSON.stringify({
+      //   y: Number(formData.ageYears || 0),
+      //   m: Number(formData.ageMonths || 0),
+      //   d: Number(formData.ageDays || 0),
+      // });
+
+        const finalData = {
+      ...formData,
+      age: JSON.stringify({
+        y: Number(formData.ageYears || 0),
+        m: Number(formData.ageMonths || 0),
+        d: Number(formData.ageDays || 0),
+      }),
+    };
+
+
+      console.log("formData", finalData)
+
+      onSubmit(finalData);
 
       // ✅ Clear form
       const emptyForm = {
@@ -296,13 +403,12 @@ export default function PatientInformation({
   }, []);
 
   const inputClass = (name: string) =>
-    `w-full px-4 py-2 border rounded-md bg-secondary/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-      errors[name] ? "border-red-500" : "border-border"
+    `w-full px-4 py-2 border rounded-md bg-secondary/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 ${errors[name] ? "border-red-500" : "border-border"
     }`;
 
   return (
     <div className="min-h-screen bg-red-50 p-5">
-              <Toaster position="top-right" />
+      <Toaster position="top-right" />
 
       <Header />
 
@@ -311,6 +417,24 @@ export default function PatientInformation({
           <h2 className="text-2xl font-bold mb-8">Patient Information -</h2>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <input
+    type="text"
+    placeholder="Enter Reference ID"
+    value={referenceInput}
+    onChange={(e) => setReferenceInput(e.target.value)}
+    className="w-full px-4 py-2 border rounded-md"
+  />
+
+  <button
+    type="button"
+    onClick={fetchByReference}
+    className="bg-blue-600 text-white px-4 py-2 rounded-md"
+  >
+    Fetch Patient
+  </button>
+</div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Serial Number */}
               <div>
@@ -446,14 +570,63 @@ export default function PatientInformation({
                 <label className="block text-sm font-medium mb-2">
                   Age <span className="text-red-500">*</span>
                 </label>
-                <input
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Years"
+                    value={formData.ageYears || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ageYears: e.target.value })
+                    }
+                    className="w-1/3 p-2 border rounded"
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Months"
+                    value={formData.ageMonths || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ageMonths: e.target.value })
+                    }
+                    className="w-1/3 p-2 border rounded"
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Days"
+                    value={formData.ageDays || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ageDays: e.target.value })
+                    }
+                    className="w-1/3 p-2 border rounded"
+                  />
+                </div>
+                {/* <input
+  type="number"
+  name="age"
+  value={formData.age}
+  onChange={handleChange}
+  className={inputClass("age")}
+  min="0"
+  step="0.01"
+/> */}
+                {/* <input
                   type="number"
                   name="age"
                   value={formData.age}
                   onChange={handleChange}
                   className={inputClass("age")}
                   min="0"
-                />
+                /> */}
+                {/* <input
+  type="number"
+  name="age"
+  value={formData.age}
+  onChange={handleChange}
+  className={inputClass("age")}
+  min="0"
+  step="0.01"
+/> */}
                 {errors.age && (
                   <p className="text-red-500 text-sm mt-1">{errors.age}</p>
                 )}
@@ -506,13 +679,28 @@ export default function PatientInformation({
                 <label className="block text-sm font-medium mb-2">
                   Hospital Name <span className="text-red-500">*</span>
                 </label>
-                <input
+                {/* <input
                   type="text"
                   name="hospitalName"
                   value={formData.hospitalName}
                   onChange={handleChange}
                   className={inputClass("hospitalName")}
-                />
+                /> */}
+
+                <select
+                  name="hospitalName"
+                  value={formData.hospitalName}
+                  onChange={handleChange}
+                  className={inputClass("hospitalName")}
+                >
+                  <option value="">- Select Hospital -</option>
+
+                  {hospitals.map((h) => (
+                    <option key={h.id} value={h.hospital_name}>
+                      {h.hospital_name}
+                    </option>
+                  ))}
+                </select>
                 {errors.hospitalName && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.hospitalName}
@@ -576,15 +764,15 @@ export default function PatientInformation({
                   Patient Category <span className="text-red-500">*</span>
                 </label>
                 <select
-  name="ipdNo"
-  value={formData.ipdNo}
-  onChange={handleChange}
-  className={inputClass("ipdNo")}
->
-  <option value="">- Select Category -</option>
-  <option value="OPD">OPD</option>
-  <option value="IPD">IPD</option>
-</select>
+                  name="ipdNo"
+                  value={formData.ipdNo}
+                  onChange={handleChange}
+                  className={inputClass("ipdNo")}
+                >
+                  <option value="">- Select Category -</option>
+                  <option value="OPD">OPD</option>
+                  <option value="IPD">IPD</option>
+                </select>
                 {/* <input
                   type="text"
                   name="ipdNo"
@@ -612,8 +800,8 @@ export default function PatientInformation({
             </div>
 
             {/* Submit */}
-          
-  <button
+
+            <button
               type="submit"
               className="w-full bg-[#C70414]  cursor-pointer text-white font-bold py-3 rounded-md hover:bg-[#C70414]/70 transition"
             >

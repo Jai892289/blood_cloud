@@ -7,7 +7,7 @@ import CounterNewBilling from "@/components/pages/counter-new-billing"
 import CounterBillingHistory from "@/components/pages/counter-billing-history"
 import CounterReports from "@/components/pages/counter-reports"
 import CounterSettings from "@/components/pages/counter-settings"
-import ReferenceListPage from "./pages/reference-list"
+import Dashboard from "./pages/dashboard"
 
 interface CounterDashboardProps {
   userName: string
@@ -15,23 +15,23 @@ interface CounterDashboardProps {
   onLogout: () => void
 }
 
-export default function CounterDashboard({ userName, counterId, onLogout }: CounterDashboardProps) {
+export default function BillingStaffDashboard({ userName, counterId, onLogout }: CounterDashboardProps) {
   const [currentPage, setCurrentPage] = useState("dashboard")
 
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <CounterHomePage setCurrentPage={setCurrentPage} />
-      case "new-billing":
-        return <CounterNewBilling />
+                return <Dashboard />
+        
+        // return <CounterHomePage setCurrentPage={setCurrentPage} />
       case "billing-history":
         return <CounterBillingHistory />
+    //   case "billing-history":
+    //     return <CounterBillingHistory />
       case "reports":
         return <CounterReports />
-      case "settings":
-        return <CounterSettings userName={userName} counterId={counterId} />
-          case "history":
-                return <ReferenceListPage />
+    //   case "settings":
+    //     return <CounterSettings userName={userName} counterId={counterId} />
       default:
         return <CounterHomePage />
     }
@@ -39,7 +39,7 @@ export default function CounterDashboard({ userName, counterId, onLogout }: Coun
 
   return (
     <LayoutWrapper
-      userRole="Counter"
+      userRole="Billing_Staff"
       userName={userName}
       counterId={counterId}
       currentPage={currentPage}

@@ -16,9 +16,9 @@ export const registerUser = async (req, res) => {
     const { full_name, email, password, counter_location, role } = req.body;
 
     // Allow only Admin and Counter roles
-    if (!["Admin", "Counter"].includes(role)) {
+    if (!["Admin", "Counter", "Accountant", "Billing_Staff", "Receptionist"].includes(role)) {
       return res.status(400).json({
-        message: "Invalid role. Only Admin or Counter are allowed.",
+        message: "Invalid role. Only Admin , Accountant, Receptionist, Billing_Staff or Counter are allowed.",
       });
     }
 

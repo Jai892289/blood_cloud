@@ -4,7 +4,7 @@ import { useState } from "react";
 import axiosInstance from "./api/axiosInstance";
 import ProjectApiList from "./api/ProjectApiList";
 
-type UserRole = "Admin" | "Counter" | null;
+type UserRole = "Admin" | "Counter" | "Accountant" | "Billing_Staff" | null;
 
 interface LoginProps {
   onLogin: (role: UserRole, name: string, counterId?: string) => void;
