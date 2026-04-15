@@ -67,24 +67,25 @@ app.get("/test", (req, res) => {
   res.send("Working");
 });
 
-const PORT = process.env.PORT || 5000;
-
-console.log("DB URL:", process.env.DATABASE_URL);
-
-checkDatabaseConnection().then(() => {
-  const options = {
-    key: fs.readFileSync("./ssl/key.pem"),
-    cert: fs.readFileSync("./ssl/cert.pem"),
-  };
-
-  https.createServer(options, app).listen(PORT, () => {
-    console.log(`🚀 HTTPS Server running on port ${PORT}`);
-  });
-});
-
 // const PORT = process.env.PORT || 5000;
 
-// ✅ Start after DB connected
+// console.log("DB URL:", process.env.DATABASE_URL);
+
 // checkDatabaseConnection().then(() => {
-//   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+//   const options = {
+//     key: fs.readFileSync("./ssl/key.pem"),
+//     cert: fs.readFileSync("./ssl/cert.pem"),
+//   };
+
+//   https.createServer(options, app).listen(PORT, () => {
+//     console.log(`🚀 HTTPS Server running on port ${PORT}`);
+//   });
 // });
+
+const PORT = process.env.PORT || 5000;
+
+// ✅ Start after DB connected
+
+checkDatabaseConnection().then(() => {
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+});
