@@ -870,43 +870,196 @@ console.log("mobile", mobile)
 
 // for receptionist part
 
+// export const initBilling = async (req, res) => {
+//   try {
+//     let {
+//       patient_name,
+//       sex,
+//       age,
+//       mobile_number,
+//       father_husband_name,
+//       hos_bill
+//     } = req.body;
+
+//     let formattedAge;
+
+// try {
+//   if (typeof age === "string") {
+//     const parsed = JSON.parse(age);
+//     formattedAge = JSON.stringify(parsed);
+//   } else if (typeof age === "object" && age !== null) {
+//     formattedAge = JSON.stringify(age);
+//   }
+// } catch (e) {
+//   console.error("Invalid age format:", age);
+// }
+
+// if (!formattedAge) {
+//   return res.status(400).json({ message: "Invalid age format" });
+// }
+
+//     // 🔥 Normalize age safely
+//     // let formattedAge;
+
+//     // try {
+//     //   if (typeof age === "string") {
+//     //     const parsed = JSON.parse(age);
+//     //     formattedAge = JSON.stringify(parsed);
+//     //   } else if (typeof age === "object") {
+//     //     formattedAge = JSON.stringify(age);
+//     //   } else {
+//     //     formattedAge = null;
+//     //   }
+//     // } catch (e) {
+//     //   console.error("Invalid age format:", age);
+//     //   formattedAge = null;
+//     // }
+
+//     const referenceId = "REF" + Date.now();
+
+//     const result = await db.insert(billings).values({
+//       reference_id: referenceId,
+//       patient_name,
+//       sex,
+//       age: formattedAge, // ✅ FIXED
+//       mobile_number,
+//       father_husband_name,
+//       hos_bill,
+//       status: "PENDING",
+//       created_at: new Date(),
+//       updated_at: new Date()
+//     }).returning();
+
+//     return res.json({
+//       message: "Patient saved",
+//       referenceId,
+//       data: result[0]
+//     });
+
+//   } catch (err) {
+//     console.error("INIT BILLING ERROR:", err);
+
+//     // 🔥 VERY IMPORTANT
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
 export const initBilling = async (req, res) => {
   try {
-    const {
-      patient_name,
-      sex,
-      age,
-      mobile_number,
-      father_husband_name,
-      hos_bill
-    } = req.body;
-
-    const referenceId = "REF" + Date.now();
-
-    const result = await db.insert(billings).values({
-      reference_id: referenceId,
+    let {
       patient_name,
       sex,
       age,
       mobile_number,
       father_husband_name,
       hos_bill,
+
+      // ✅ NEW FIELDS
+      hospital_name,
+      referred_by_dr,
+      ward,
+      hos_pat_reg,
+      crn,
+      bed,
+      ipd_no
+    } = req.body;
+
+    // 🔥 Normalize age safely
+    let formattedAge;
+
+    try {
+      if (typeof age === "string") {
+        const parsed = JSON.parse(age);
+        formattedAge = JSON.stringify(parsed);
+      } else if (typeof age === "object" && age !== null) {
+        formattedAge = JSON.stringify(age);
+      }
+    } catch (e) {
+      console.error("Invalid age format:", age);
+    }
+
+    if (!formattedAge) {
+      return res.status(400).json({ message: "Invalid age format" });
+    }
+
+    const referenceId = "REF" + Date.now();
+
+    const result = await db.insert(billings).values({
+      reference_id: referenceId,
+
+      // 👨‍⚕️ Basic info
+      patient_name,
+      sex,
+      age: formattedAge,
+      mobile_number: mobile_number || null,
+      father_husband_name: father_husband_name || null,
+
+      // 🏥 Hospital info (NEW)
+      hospital_name: hospital_name || null,
+      referred_by_dr: referred_by_dr || null,
+      ward: ward || null,
+      hos_pat_reg: hos_pat_reg || null,
+      crn: crn || null,
+      bed: bed || null,
+      ipd_no: ipd_no || null,
+
+      // 💵 Billing init
+      hos_bill: hos_bill || null,
       status: "PENDING",
+
       created_at: new Date(),
       updated_at: new Date()
     }).returning();
 
     return res.json({
-      message: "Patient saved",
+      message: "Patient initialized successfully",
       referenceId,
       data: result[0]
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error" });
+    console.error("INIT BILLING ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
 };
+
+// export const initBilling = async (req, res) => {
+//   try {
+//     const {
+//       patient_name,
+//       sex,
+//       age,
+//       mobile_number,
+//       father_husband_name,
+//       hos_bill
+//     } = req.body;
+
+//     const referenceId = "REF" + Date.now();
+
+//     const result = await db.insert(billings).values({
+//       reference_id: referenceId,
+//       patient_name,
+//       sex,
+//       age,
+//       mobile_number,
+//       father_husband_name,
+//       hos_bill,
+//       status: "PENDING",
+//       created_at: new Date(),
+//       updated_at: new Date()
+//     }).returning();
+
+//     return res.json({
+//       message: "Patient saved",
+//       referenceId,
+//       data: result[0]
+//     });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Error" });
+//   }
+// };
 
 export const getByReference = async (req, res) => {
   const { refId } = req.params;

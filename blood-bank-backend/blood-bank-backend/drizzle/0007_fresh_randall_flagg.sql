@@ -1,1 +1,0 @@
-ALTER TABLE "billings" ADD COLUMN "payment_details" jsonb;

@@ -1,1 +1,0 @@
-ALTER TABLE "billings" ALTER COLUMN "age" SET DATA TYPE numeric(5, 2);

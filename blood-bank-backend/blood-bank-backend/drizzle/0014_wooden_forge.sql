@@ -1,1 +1,0 @@
-ALTER TABLE "billings" ALTER COLUMN "bill_no" DROP NOT NULL;

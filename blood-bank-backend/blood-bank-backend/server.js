@@ -21,12 +21,12 @@ import fs from "fs";
 dotenv.config();
 
 const app = express();
-// app.use(cors());
-app.use(cors({
-  origin: ["https://hopeblood.info"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+app.use(cors());
+// app.use(cors({
+//   origin: ["https://hopeblood.info"],
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+//   credentials: true
+// }));
 
 app.use(express.json());
 

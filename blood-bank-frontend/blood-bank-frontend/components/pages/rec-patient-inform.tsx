@@ -1,73 +1,63 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Header } from "./header";
 import axiosInstance from "../api/axiosInstance";
+import ProjectApiList from "../api/ProjectApiList";
 import { toast, Toaster } from "react-hot-toast";
 
 interface PatientData {
-  slNo: string;
-  billNo: string;
-  date: string;
   patientName: string;
   sex: string;
-  age: string;
   mobileNumber: string;
   fatherHusbandName: string;
-  hos_bill: string;
+
   ageYears?: string;
   ageMonths?: string;
   ageDays?: string;
+
+  hospitalName: string;
+  referredByDr: string;
+  ward: string;
+  ipdNo: string;
+  hos_pat_reg: string;
+  hos_bill: string;
 }
-
-const getCurrentDateTime = () => {
-  const now = new Date();
-
-  const formatter = new Intl.DateTimeFormat("en-IN", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
-  const parts: any = formatter.formatToParts(now);
-  const get = (type: any) => parts.find((p: any) => p.type === type).value;
-
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
-};
 
 export default function PatientInformationForReception() {
   const [formData, setFormData] = useState<PatientData>({
-    date: getCurrentDateTime(),
-    slNo: "",
-    billNo: "",
     patientName: "",
     sex: "",
-    age: "",
     mobileNumber: "",
     fatherHusbandName: "",
+    ageYears: "",
+    ageMonths: "",
+    ageDays: "",
+    hospitalName: "",
+    referredByDr: "",
+    ward: "",
+    ipdNo: "",
+    hos_pat_reg: "",
     hos_bill: "",
   });
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [hospitals, setHospitals] = useState<any[]>([]);
   const [referenceId, setReferenceId] = useState("");
 
-  // ⏱ Auto update time
+  // 🔹 Fetch hospitals
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFormData((prev) => ({
-        ...prev,
-        date: getCurrentDateTime(),
-      }));
-    }, 60000);
-
-    return () => clearInterval(interval);
+    const fetchHospitals = async () => {
+      try {
+        const res = await axiosInstance.get(ProjectApiList.hospitals);
+        setHospitals(res.data.data || res.data || []);
+      } catch {
+        toast.error("Failed to load hospitals");
+      }
+    };
+    fetchHospitals();
   }, []);
 
-  // 🔍 Fetch existing patient by mobile
+  // 🔥 Mobile auto-fetch
   const fetchPatientByMobile = async (mobile: string) => {
     try {
       const res = await axiosInstance.get(`/billings/by-mobile/${mobile}`);
@@ -75,32 +65,40 @@ export default function PatientInformationForReception() {
 
       toast.success("Existing patient found");
 
+      let parsedAge = { y: "", m: "", d: "" };
+
+      try {
+        if (data.age) {
+          const ageObj = JSON.parse(data.age);
+          parsedAge = {
+            y: ageObj.y?.toString() || "",
+            m: ageObj.m?.toString() || "",
+            d: ageObj.d?.toString() || "",
+          };
+        }
+      } catch {}
+
       setFormData((prev) => ({
         ...prev,
         patientName: data.patient_name || "",
-        hos_bill: data.hos_bill || "",
-        age: data.age || "",
         sex: data.sex || "",
         fatherHusbandName: data.father_husband_name || "",
+        hos_bill: data.hos_bill || "",
+        ageYears: parsedAge.y,
+        ageMonths: parsedAge.m,
+        ageDays: parsedAge.d,
       }));
+
     } catch (err: any) {
       if (err.response?.status === 404) {
         toast("New patient", { icon: "🆕" });
-
-        setFormData((prev) => ({
-          ...prev,
-          patientName: "",
-          age: "",
-          sex: "",
-          fatherHusbandName: "",
-          hos_bill: "",
-        }));
       } else {
         toast.error("Error fetching patient");
       }
     }
   };
 
+  // 🔹 Handle input
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -108,7 +106,6 @@ export default function PatientInformationForReception() {
 
     if (name === "mobileNumber") {
       const digits = value.replace(/\D/g, "").slice(0, 10);
-
       setFormData((prev) => ({ ...prev, mobileNumber: digits }));
 
       if (digits.length === 10) {
@@ -120,208 +117,211 @@ export default function PatientInformationForReception() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Validation (ONLY patient fields)
+  // 🔹 Validation
   const validateForm = () => {
-    const newErrors: any = {};
-
-    if (!formData.patientName.trim())
-      newErrors.patientName = "Patient name required";
-
-    if (!formData.sex) newErrors.sex = "Select sex";
-
+    if (!formData.patientName.trim()) return "Patient name required";
+    if (!formData.sex) return "Select sex";
     if (!formData.mobileNumber || formData.mobileNumber.length !== 10)
-      newErrors.mobileNumber = "Valid mobile required";
+      return "Valid mobile required";
 
     const y = Number(formData.ageYears || 0);
     const m = Number(formData.ageMonths || 0);
     const d = Number(formData.ageDays || 0);
 
     if (y === 0 && m === 0 && d === 0)
-      newErrors.age = "Enter valid age";
+      return "Enter valid age";
 
     if (!formData.fatherHusbandName.trim())
-      newErrors.fatherHusbandName = "Required";
+      return "Father/Husband required";
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!formData.hospitalName) return "Select hospital";
+    if (!formData.referredByDr.trim()) return "Doctor required";
+    if (!formData.ward.trim()) return "Ward required";
+    if (!formData.ipdNo) return "Select category";
+    if (!formData.hos_pat_reg.trim())
+      return "Hospital reg no required";
+
+    return null;
   };
 
-  // 🚀 Submit → INIT BILLING
+  // 🔹 Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      try {
-        const payload = {
-          patient_name: formData.patientName,
-          sex: formData.sex,
-          age: JSON.stringify({
-            y: Number(formData.ageYears || 0),
-            m: Number(formData.ageMonths || 0),
-            d: Number(formData.ageDays || 0),
-          }),
-          mobile_number: formData.mobileNumber,
-          father_husband_name: formData.fatherHusbandName,
-          hos_bill: formData.hos_bill,
-        };
+    const error = validateForm();
+    if (error) {
+      toast.error(error);
+      return;
+    }
 
-        const res = await axiosInstance.post("/billings/init", payload);
+    try {
+      const payload = {
+        patient_name: formData.patientName,
+        sex: formData.sex,
+        age: {
+          y: Number(formData.ageYears || 0),
+          m: Number(formData.ageMonths || 0),
+          d: Number(formData.ageDays || 0),
+        },
+        mobile_number: formData.mobileNumber,
+        father_husband_name: formData.fatherHusbandName,
 
-        setReferenceId(res.data.referenceId);
+        hospital_name: formData.hospitalName,
+        referred_by_dr: formData.referredByDr,
+        ward: formData.ward,
+        ipd_no: formData.ipdNo,
+        hos_pat_reg: formData.hos_pat_reg,
+        hos_bill: formData.hos_bill,
+      };
 
-        toast.success("Patient saved successfully");
+      const res = await axiosInstance.post("/billings/init", payload);
 
-        // reset
-        setFormData({
-          date: getCurrentDateTime(),
-          slNo: "",
-          billNo: "",
-          patientName: "",
-          sex: "",
-          age: "",
-          mobileNumber: "",
-          fatherHusbandName: "",
-          hos_bill: "",
-        });
+      setReferenceId(res.data.referenceId);
+      toast.success("Reference generated");
 
-      } catch (err) {
-        toast.error("Failed to save patient");
-      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Error");
     }
   };
 
   return (
-    <div className="min-h-screen bg-red-50 p-5">
+    <div className="min-h-screen bg-red-50 p-6">
       <Toaster />
-      <Header />
 
-      <div className="bg-white p-8 shadow">
-        <h2 className="text-2xl font-bold mb-6">Patient Information</h2>
+      <div className="bg-white p-8 shadow rounded mx-auto">
+        <h2 className="text-2xl font-bold mb-6">
+          Patient Information (Reception)
+        </h2>
 
         {referenceId && (
-          <div className="mb-4 p-4 bg-green-100 text-green-800 font-bold">
+          <div className="bg-green-100 p-4 mb-6 font-semibold rounded">
             Reference ID: {referenceId}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
 
-  {/* Mobile */}
-  <div>
-    <label className="block mb-1">Mobile Number *</label>
-    <input
-      name="mobileNumber"
-      value={formData.mobileNumber}
-      onChange={handleChange}
-      className="w-full border p-2 rounded"
-    />
-    {errors.mobileNumber && <p className="text-red-500 text-sm">{errors.mobileNumber}</p>}
-  </div>
+          {/* Patient Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-  {/* Aadhaar */}
-  <div>
-    <label className="block mb-1">Aadhaar</label>
-    <input
-      name="hos_bill"
-      value={formData.hos_bill}
-      onChange={handleChange}
-      className="w-full border p-2 rounded"
-    />
-  </div>
+            <div>
+              <label className="block mb-2 font-medium">Mobile *</label>
+              <input name="mobileNumber" value={formData.mobileNumber}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
 
-  {/* Patient Name */}
-  <div>
-    <label className="block mb-1">Patient Name *</label>
-    <input
-      name="patientName"
-      value={formData.patientName}
-      onChange={handleChange}
-      className="w-full border p-2 rounded"
-    />
-    {errors.patientName && <p className="text-red-500 text-sm">{errors.patientName}</p>}
-  </div>
+            <div>
+              <label className="block mb-2 font-medium">Aadhaar</label>
+              <input name="hos_bill" value={formData.hos_bill}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
 
-  {/* Sex */}
-  <div>
-    <label className="block mb-1">Sex *</label>
-    <select
-      name="sex"
-      value={formData.sex}
-      onChange={handleChange}
-      className="w-full border p-2 rounded"
-    >
-      <option value="">Select</option>
-      <option value="male">Male</option>
-      <option value="female">Female</option>
-      <option value="other">Other</option>
-    </select>
-    {errors.sex && <p className="text-red-500 text-sm">{errors.sex}</p>}
-  </div>
+            <div>
+              <label className="block mb-2 font-medium">Patient Name *</label>
+              <input name="patientName" value={formData.patientName}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
 
-  {/* Age */}
-  <div className="md:col-span-2">
-    <label className="block mb-1">Age *</label>
+            <div>
+              <label className="block mb-2 font-medium">Sex *</label>
+              <select name="sex" value={formData.sex}
+                onChange={handleChange}
+                className="w-full border p-3 rounded">
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
 
-    <div className="flex gap-2">
-      <input
-        type="number"
-        placeholder="Years"
-        value={formData.ageYears || ""}
-        onChange={(e) => {
-          const val = Math.min(120, Math.max(0, Number(e.target.value)));
-          setFormData({ ...formData, ageYears: val.toString() });
-        }}
-        className="w-1/3 border p-2 rounded"
-      />
+            {/* Age */}
+            <div className="col-span-2 flex gap-4">
+              <input placeholder="Years" value={formData.ageYears}
+                onChange={(e)=>setFormData({...formData,ageYears:e.target.value})}
+                className="border p-3 w-1/3 rounded"/>
+              <input placeholder="Months" value={formData.ageMonths}
+                onChange={(e)=>setFormData({...formData,ageMonths:e.target.value})}
+                className="border p-3 w-1/3 rounded"/>
+              <input placeholder="Days" value={formData.ageDays}
+                onChange={(e)=>setFormData({...formData,ageDays:e.target.value})}
+                className="border p-3 w-1/3 rounded"/>
+            </div>
 
-      <input
-        type="number"
-        placeholder="Months"
-        value={formData.ageMonths || ""}
-        onChange={(e) => {
-          const val = Math.min(11, Math.max(0, Number(e.target.value)));
-          setFormData({ ...formData, ageMonths: val.toString() });
-        }}
-        className="w-1/3 border p-2 rounded"
-      />
+            <div>
+              <label className="block mb-2 font-medium">Father/Husband *</label>
+              <input name="fatherHusbandName"
+                value={formData.fatherHusbandName}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
 
-      <input
-        type="number"
-        placeholder="Days"
-        value={formData.ageDays || ""}
-        onChange={(e) => {
-          const val = Math.min(31, Math.max(0, Number(e.target.value)));
-          setFormData({ ...formData, ageDays: val.toString() });
-        }}
-        className="w-1/3 border p-2 rounded"
-      />
-    </div>
+          </div>
 
-    {errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
-  </div>
+          {/* Billing Info */}
+          <h3 className="text-xl font-bold">Patient Billing Information</h3>
 
-  {/* Father Name */}
-  <div>
-    <label className="block mb-1">Father/Husband *</label>
-    <input
-      name="fatherHusbandName"
-      value={formData.fatherHusbandName}
-      onChange={handleChange}
-      className="w-full border p-2 rounded"
-    />
-    {errors.fatherHusbandName && (
-      <p className="text-red-500 text-sm">{errors.fatherHusbandName}</p>
-    )}
-  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-  {/* Submit */}
-  <div className="md:col-span-2">
-    <button className="w-full bg-red-600 text-white p-3 rounded">
-      Generate Reference ID
-    </button>
-  </div>
+            <div>
+              <label className="block mb-2 font-medium">Hospital Reg No *</label>
+              <input name="hos_pat_reg"
+                value={formData.hos_pat_reg}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
 
-</form>
+            <div>
+              <label className="block mb-2 font-medium">Hospital *</label>
+              <select name="hospitalName"
+                value={formData.hospitalName}
+                onChange={handleChange}
+                className="w-full border p-3 rounded">
+                <option value="">Select</option>
+                {hospitals.map((h:any)=>(
+                  <option key={h.id} value={h.hospital_name}>
+                    {h.hospital_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">Doctor *</label>
+              <input name="referredByDr"
+                value={formData.referredByDr}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">Ward *</label>
+              <input name="ward"
+                value={formData.ward}
+                onChange={handleChange}
+                className="w-full border p-3 rounded"/>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">Category *</label>
+              <select name="ipdNo"
+                value={formData.ipdNo}
+                onChange={handleChange}
+                className="w-full border p-3 rounded">
+                <option value="">Select</option>
+                <option value="OPD">OPD</option>
+                <option value="IPD">IPD</option>
+              </select>
+            </div>
+
+          </div>
+
+          <button className="w-full bg-red-600 text-white py-3 rounded">
+            Generate Reference ID
+          </button>
+
+        </form>
       </div>
     </div>
   );

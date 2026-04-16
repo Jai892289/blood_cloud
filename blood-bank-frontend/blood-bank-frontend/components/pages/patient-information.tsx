@@ -121,19 +121,47 @@ const fetchByReference = async () => {
 
     // ✅ Set form data
     setFormData((prev) => ({
-      ...prev,
-      patientName: data.patient_name || "",
-      sex: data.sex || "",
-      mobileNumber: data.mobile_number || "",
-      fatherHusbandName: data.father_husband_name || "",
-      hos_bill: data.hos_bill || "",
-  reference_id: data.reference_id,
+  ...prev,
 
-      // 🔥 IMPORTANT FIX
-      ageYears: parsedAge.y,
-      ageMonths: parsedAge.m,
-      ageDays: parsedAge.d,
-    }));
+  // 👤 Patient Info
+  patientName: data.patient_name || "",
+  sex: data.sex || "",
+  mobileNumber: data.mobile_number || "",
+  fatherHusbandName: data.father_husband_name || "",
+  hos_bill: data.hos_bill || "",
+
+  // 🎂 Age
+  ageYears: parsedAge.y,
+  ageMonths: parsedAge.m,
+  ageDays: parsedAge.d,
+    reference_id: data.reference_id,
+
+
+  // 🏥 Billing Info (IMPORTANT)
+  hospitalName: data.hospital_name || "",
+  referredByDr: data.referred_by_dr || "",
+  ward: data.ward || "",
+  ipdNo: data.ipd_no || "",
+  hos_pat_reg: data.hos_pat_reg || "",
+
+  // optional
+  // crn: data.crn || "",
+  // bed: data.bed || "",
+}));
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     patientName: data.patient_name || "",
+  //     sex: data.sex || "",
+  //     mobileNumber: data.mobile_number || "",
+  //     fatherHusbandName: data.father_husband_name || "",
+  //     hos_bill: data.hos_bill || "",
+  // reference_id: data.reference_id,
+
+  //     // 🔥 IMPORTANT FIX
+  //     ageYears: parsedAge.y,
+  //     ageMonths: parsedAge.m,
+  //     ageDays: parsedAge.d,
+  //   }));
 
     toast.success("Patient loaded");
 

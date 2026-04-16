@@ -57,7 +57,8 @@ payment_details: jsonb("payment_details"),
   is_cancelled: boolean("is_cancelled").default(false),
 cancel_remark: text("cancel_remark"),
 cancelled_at: timestamp("cancelled_at"),
-
+temp_test_column: varchar("temp_test_column", { length: 50 }),
+new_field: varchar("new_field", { length: 50 }),
 blood_component_details: jsonb("blood_component_details"),
 total_amount: numeric("total_amount", { precision: 12, scale: 2 }),
   // 💉 Blood Component Details (JSON)

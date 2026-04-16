@@ -1,0 +1,1 @@
+ALTER TABLE "billings" ADD COLUMN "new_field" varchar(50);
