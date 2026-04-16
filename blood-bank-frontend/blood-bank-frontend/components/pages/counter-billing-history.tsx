@@ -280,8 +280,15 @@ records.forEach((record: any) => {
 
 const commission =
   rawCommission !== undefined && rawCommission !== null
-    ? `${rawCommission}%`
+    ? ((record.total_amount * rawCommission) / 100).toFixed(2)
     : "";
+
+//   const rawCommission = hospitalMap[record.hospital_name];
+
+// const commission =
+//   rawCommission !== undefined && rawCommission !== null
+//     ? `${rawCommission}%`
+//     : "";
 
   // const commission = hospitalMap[record.hospital_name] || "";
 
