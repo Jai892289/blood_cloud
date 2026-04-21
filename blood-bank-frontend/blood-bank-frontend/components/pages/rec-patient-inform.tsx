@@ -158,11 +158,16 @@ export default function PatientInformationForReception() {
       const payload = {
         patient_name: formData.patientName,
         sex: formData.sex,
-        age: {
-          y: Number(formData.ageYears || 0),
-          m: Number(formData.ageMonths || 0),
-          d: Number(formData.ageDays || 0),
-        },
+        // age: {
+        //   y: Number(formData.ageYears || 0),
+        //   m: Number(formData.ageMonths || 0),
+        //   d: Number(formData.ageDays || 0),
+        // },
+        age: JSON.stringify({
+  y: Number(formData.ageYears || 0),
+  m: Number(formData.ageMonths || 0),
+  d: Number(formData.ageDays || 0),
+}),
         mobile_number: formData.mobileNumber,
         father_husband_name: formData.fatherHusbandName,
 

@@ -69,7 +69,7 @@ app.get("/test", (req, res) => {
 
 // const PORT = process.env.PORT || 5000;
 
-// console.log("DB URL:", process.env.DATABASE_URL);
+console.log("DB URL:", process.env.DATABASE_URL);
 
 // checkDatabaseConnection().then(() => {
 //   const options = {
