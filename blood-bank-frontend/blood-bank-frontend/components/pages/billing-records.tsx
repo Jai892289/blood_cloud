@@ -450,7 +450,7 @@ const handleBulkExport = async () => {
                     <td className="px-4 py-3">{record.user?.full_name || "-"}</td>
                     <td className="px-4 py-3">
                       {record.blood_component_details
-                        .map((b) => `${b.particulars} (${b.quantity})`)
+                        ?.map((b) => `${b.particulars} (${b.quantity})`)
                         .join(", ")}
                     </td>
                     <td className="px-4 py-3 font-semibold">₹{record.total_amount}</td>

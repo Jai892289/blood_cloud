@@ -2,6 +2,7 @@
 import { db } from "../db/index.js";
 import { billings, users } from "../db/schema.js";
 import { eq, like, desc, sql, between, and, isNotNull } from "drizzle-orm";
+import { getNextBillNo } from "../utils/getNextBillNo.js";
 
 // ✅ Get all billings
 export const getAllBillings = async (req, res) => {
@@ -176,226 +177,226 @@ export const getBillingById = async (req, res) => {
 };
 
 
-export const createBilling = async (req, res) => {
-  try {
-    const {
-      patient_name,
-      sex,
-      age,
-      mobile_number,
-      father_husband_name,
-      hospital_name,
-      referred_by_dr,
-      crn,
-      ward,
-      bed,
-      ipd_no,
-      user_id,
-      blood_component_details,
-      is_paid,
-      payment_method,
-      payment_details,
-      hos_pat_reg,
-      hos_bill,
-      reference_id, // ✅ NEW
-    } = req.body;
+// export const createBilling = async (req, res) => {
+//   try {
+//     const {
+//       patient_name,
+//       sex,
+//       age,
+//       mobile_number,
+//       father_husband_name,
+//       hospital_name,
+//       referred_by_dr,
+//       crn,
+//       ward,
+//       bed,
+//       ipd_no,
+//       user_id,
+//       blood_component_details,
+//       is_paid,
+//       payment_method,
+//       payment_details,
+//       hos_pat_reg,
+//       hos_bill,
+//       reference_id, // ✅ NEW
+//     } = req.body;
 
-    // ✅ Validate only for FINAL billing (not init)
-    if (!patient_name || !sex || !age || !blood_component_details) {
-      return res.status(400).json({
-        message: "Missing required fields.",
-      });
-    }
+//     // ✅ Validate only for FINAL billing (not init)
+//     if (!patient_name || !sex || !age || !blood_component_details) {
+//       return res.status(400).json({
+//         message: "Missing required fields.",
+//       });
+//     }
 
-    // 🧮 Parse blood component details
-    let bloodDetails = blood_component_details;
-    if (typeof blood_component_details === "string") {
-      try {
-        bloodDetails = JSON.parse(blood_component_details);
-      } catch {
-        return res.status(400).json({
-          message: "Invalid blood_component_details JSON format.",
-        });
-      }
-    }
+//     // 🧮 Parse blood component details
+//     let bloodDetails = blood_component_details;
+//     if (typeof blood_component_details === "string") {
+//       try {
+//         bloodDetails = JSON.parse(blood_component_details);
+//       } catch {
+//         return res.status(400).json({
+//           message: "Invalid blood_component_details JSON format.",
+//         });
+//       }
+//     }
 
-    // 🧾 Calculate total amount
-    let total_amount = bloodDetails.reduce(
-      (sum, item) => sum + Number(item.amount || 0),
-      0
-    );
+//     // 🧾 Calculate total amount
+//     let total_amount = bloodDetails.reduce(
+//       (sum, item) => sum + Number(item.amount || 0),
+//       0
+//     );
 
-    // ✅ Payment logic
-    if (payment_method === "FOC") {
-      total_amount = 0;
-    }
+//     // ✅ Payment logic
+//     if (payment_method === "FOC") {
+//       total_amount = 0;
+//     }
 
-    if (payment_method === "Discount") {
-      const discount = Number(payment_details?.discount_amount || 0);
+//     if (payment_method === "Discount") {
+//       const discount = Number(payment_details?.discount_amount || 0);
 
-      if (discount > total_amount) {
-        return res.status(400).json({
-          message: "Discount cannot exceed total amount",
-        });
-      }
+//       if (discount > total_amount) {
+//         return res.status(400).json({
+//           message: "Discount cannot exceed total amount",
+//         });
+//       }
 
-      total_amount = total_amount - discount;
-    }
+//       total_amount = total_amount - discount;
+//     }
 
-    // ✅ Payment validations
-    if (payment_method === "Card" && !payment_details?.transaction_number) {
-      return res.status(400).json({
-        message: "Transaction number required for Card payment.",
-      });
-    }
+//     // ✅ Payment validations
+//     if (payment_method === "Card" && !payment_details?.transaction_number) {
+//       return res.status(400).json({
+//         message: "Transaction number required for Card payment.",
+//       });
+//     }
 
-    if (payment_method === "Credit" && !payment_details?.remarks) {
-      return res.status(400).json({
-        message: "Remarks required for Credit.",
-      });
-    }
+//     if (payment_method === "Credit" && !payment_details?.remarks) {
+//       return res.status(400).json({
+//         message: "Remarks required for Credit.",
+//       });
+//     }
 
-    if (payment_method === "FOC") {
-      if (!payment_details?.foc_type) {
-        return res.status(400).json({
-          message: "FOC type required.",
-        });
-      }
+//     if (payment_method === "FOC") {
+//       if (!payment_details?.foc_type) {
+//         return res.status(400).json({
+//           message: "FOC type required.",
+//         });
+//       }
 
-      if (
-        payment_details.foc_type === "MANAGEMENT" &&
-        !payment_details?.remarks
-      ) {
-        return res.status(400).json({
-          message: "Remarks required for MANAGEMENT FOC.",
-        });
-      }
-    }
+//       if (
+//         payment_details.foc_type === "MANAGEMENT" &&
+//         !payment_details?.remarks
+//       ) {
+//         return res.status(400).json({
+//           message: "Remarks required for MANAGEMENT FOC.",
+//         });
+//       }
+//     }
 
-    if (payment_method === "Bank" && !payment_details?.utr) {
-      return res.status(400).json({
-        message: "UTR number required for Bank payment.",
-      });
-    }
+//     if (payment_method === "Bank" && !payment_details?.utr) {
+//       return res.status(400).json({
+//         message: "UTR number required for Bank payment.",
+//       });
+//     }
 
-    // 🧾 Generate Bill Number (only for new insert)
-    let newBillNo = null;
+//     // 🧾 Generate Bill Number (only for new insert)
+//     let newBillNo = null;
 
-    if (!reference_id) {
-      const year = new Date().getFullYear();
-      const prefix = `BB${year}`;
+//     if (!reference_id) {
+//       const year = new Date().getFullYear();
+//       const prefix = `BB${year}`;
 
-      const lastBill = await db
-        .select({ bill_no: billings.bill_no })
-        .from(billings)
-        .where(like(billings.bill_no, `${prefix}%`))
-        .orderBy(desc(billings.id))
-        .limit(1);
+//       const lastBill = await db
+//         .select({ bill_no: billings.bill_no })
+//         .from(billings)
+//         .where(like(billings.bill_no, `${prefix}%`))
+//         .orderBy(desc(billings.id))
+//         .limit(1);
 
-      let newSerial = 1;
-      if (lastBill.length > 0) {
-        const lastNo = lastBill[0].bill_no;
-        const serialPart = parseInt(lastNo.slice(prefix.length), 10);
-        newSerial = serialPart + 1;
-      }
+//       let newSerial = 1;
+//       if (lastBill.length > 0) {
+//         const lastNo = lastBill[0].bill_no;
+//         const serialPart = parseInt(lastNo.slice(prefix.length), 10);
+//         newSerial = serialPart + 1;
+//       }
 
-      const formattedNumber = String(newSerial).padStart(10, "0");
-      newBillNo = `${prefix}${formattedNumber}`;
-    }
+//       const formattedNumber = String(newSerial).padStart(10, "0");
+//       newBillNo = `${prefix}${formattedNumber}`;
+//     }
 
-    // ✅ Prepare JSONB
-    const bloodJson = sql.raw(`'${JSON.stringify(bloodDetails)}'::jsonb`);
-    const paymentJson = sql.raw(
-      `'${JSON.stringify(payment_details || {})}'::jsonb`
-    );
+//     // ✅ Prepare JSONB
+//     const bloodJson = sql.raw(`'${JSON.stringify(bloodDetails)}'::jsonb`);
+//     const paymentJson = sql.raw(
+//       `'${JSON.stringify(payment_details || {})}'::jsonb`
+//     );
 
-    let result;
+//     let result;
 
-    // =========================================================
-    // 🔄 UPDATE FLOW (Reference ID exists)
-    // =========================================================
-    if (reference_id) {
-      const updated = await db
-        .update(billings)
-        .set({
-          hospital_name: hospital_name || null,
-          referred_by_dr: referred_by_dr || null,
-          crn: crn || null,
-          ward: ward || null,
-          bed: bed || null,
-          ipd_no: ipd_no || null,
-          blood_component_details: bloodJson,
-          payment_details: paymentJson,
-          total_amount: total_amount.toFixed(2),
-          user_id: user_id ? Number(user_id) : null,
-          is_paid: is_paid ?? false,
-          payment_method: payment_method || "Cash",
-          hos_pat_reg,
-          hos_bill,
-          status: "COMPLETED",
-          updated_at: new Date(),
-        })
-        .where(eq(billings.reference_id, reference_id))
-        .returning();
+//     // =========================================================
+//     // 🔄 UPDATE FLOW (Reference ID exists)
+//     // =========================================================
+//     if (reference_id) {
+//       const updated = await db
+//         .update(billings)
+//         .set({
+//           hospital_name: hospital_name || null,
+//           referred_by_dr: referred_by_dr || null,
+//           crn: crn || null,
+//           ward: ward || null,
+//           bed: bed || null,
+//           ipd_no: ipd_no || null,
+//           blood_component_details: bloodJson,
+//           payment_details: paymentJson,
+//           total_amount: total_amount.toFixed(2),
+//           user_id: user_id ? Number(user_id) : null,
+//           is_paid: is_paid ?? false,
+//           payment_method: payment_method || "Cash",
+//           hos_pat_reg,
+//           hos_bill,
+//           status: "COMPLETED",
+//           updated_at: new Date(),
+//         })
+//         .where(eq(billings.reference_id, reference_id))
+//         .returning();
 
-      if (!updated.length) {
-        return res.status(404).json({
-          message: "Reference ID not found",
-        });
-      }
+//       if (!updated.length) {
+//         return res.status(404).json({
+//           message: "Reference ID not found",
+//         });
+//       }
 
-      result = updated[0];
-    }
+//       result = updated[0];
+//     }
 
-    // =========================================================
-    // 🆕 INSERT FLOW (Normal billing)
-    // =========================================================
-    else {
-      const inserted = await db
-        .insert(billings)
-        .values({
-          bill_no: newBillNo,
-          patient_name,
-          sex,
-          age,
-          mobile_number: mobile_number || null,
-          father_husband_name: father_husband_name || null,
-          hospital_name: hospital_name || null,
-          referred_by_dr: referred_by_dr || null,
-          crn: crn || null,
-          ward: ward || null,
-          bed: bed || null,
-          ipd_no: ipd_no || null,
-          blood_component_details: bloodJson,
-          payment_details: paymentJson,
-          total_amount: total_amount.toFixed(2),
-          user_id: user_id ? Number(user_id) : null,
-          is_paid: is_paid ?? false,
-          payment_method: payment_method || "Cash",
-          hos_pat_reg,
-          hos_bill,
-          reference_id: null,
-          status: "COMPLETED",
-          created_at: new Date(),
-          updated_at: new Date(),
-        })
-        .returning();
+//     // =========================================================
+//     // 🆕 INSERT FLOW (Normal billing)
+//     // =========================================================
+//     else {
+//       const inserted = await db
+//         .insert(billings)
+//         .values({
+//           bill_no: newBillNo,
+//           patient_name,
+//           sex,
+//           age,
+//           mobile_number: mobile_number || null,
+//           father_husband_name: father_husband_name || null,
+//           hospital_name: hospital_name || null,
+//           referred_by_dr: referred_by_dr || null,
+//           crn: crn || null,
+//           ward: ward || null,
+//           bed: bed || null,
+//           ipd_no: ipd_no || null,
+//           blood_component_details: bloodJson,
+//           payment_details: paymentJson,
+//           total_amount: total_amount.toFixed(2),
+//           user_id: user_id ? Number(user_id) : null,
+//           is_paid: is_paid ?? false,
+//           payment_method: payment_method || "Cash",
+//           hos_pat_reg,
+//           hos_bill,
+//           reference_id: null,
+//           status: "COMPLETED",
+//           created_at: new Date(),
+//           updated_at: new Date(),
+//         })
+//         .returning();
 
-      result = inserted[0];
-    }
+//       result = inserted[0];
+//     }
 
-    return res.status(201).json({
-      message: "✅ Billing processed successfully",
-      data: result,
-    });
-  } catch (err) {
-    console.error("❌ Create Billing Error:", err);
-    return res.status(500).json({
-      message: "Failed to create billing",
-      error: err.message,
-    });
-  }
-};
+//     return res.status(201).json({
+//       message: "✅ Billing processed successfully",
+//       data: result,
+//     });
+//   } catch (err) {
+//     console.error("❌ Create Billing Error:", err);
+//     return res.status(500).json({
+//       message: "Failed to create billing",
+//       error: err.message,
+//     });
+//   }
+// };
 
 // export const createBilling = async (req, res) => {
 //   try {
@@ -584,6 +585,196 @@ export const createBilling = async (req, res) => {
 // };
 
 // ✅ Update billing
+
+
+export const initBilling = async (req, res) => {
+  try {
+    let {
+      patient_name,
+      sex,
+      age,
+      mobile_number,
+      father_husband_name,
+      hos_bill,
+      hospital_name,
+      referred_by_dr,
+      ward,
+      hos_pat_reg,
+      crn,
+      bed,
+      ipd_no
+    } = req.body;
+
+    const normalize = (v) =>
+      typeof v === "string" ? v.trim() : v != null ? String(v).trim() : null;
+
+    if (!patient_name) return res.status(400).json({ message: "Name required" });
+    if (!sex) return res.status(400).json({ message: "Sex required" });
+    if (!age) return res.status(400).json({ message: "Age required" });
+
+    let formattedAge;
+    try {
+      const parsed = typeof age === "string" ? JSON.parse(age) : age;
+      formattedAge = JSON.stringify(parsed);
+    } catch {
+      return res.status(400).json({ message: "Invalid age" });
+    }
+
+    const referenceId = "REF" + Date.now();
+
+    const result = await db.insert(billings).values({
+      reference_id: referenceId,
+      patient_name: normalize(patient_name),
+      sex: normalize(sex),
+      age: formattedAge,
+      mobile_number: normalize(mobile_number),
+      father_husband_name: normalize(father_husband_name),
+      hospital_name: normalize(hospital_name),
+      referred_by_dr: normalize(referred_by_dr),
+      ward: normalize(ward),
+      hos_pat_reg: normalize(hos_pat_reg),
+      crn: normalize(crn),
+      bed: normalize(bed),
+      ipd_no: normalize(ipd_no),
+      hos_bill: normalize(hos_bill),
+      status: "PENDING",
+      created_at: new Date(),
+      updated_at: new Date()
+    }).returning();
+
+    res.json({
+      message: "Init success",
+      referenceId,
+      data: result[0]
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Init failed" });
+  }
+};
+
+
+
+export const createBilling = async (req, res) => {
+  try {
+    const {
+      patient_name,
+      sex,
+      age,
+      mobile_number,
+      father_husband_name,
+      hospital_name,
+      referred_by_dr,
+      crn,
+      ward,
+      bed,
+      ipd_no,
+      user_id,
+      blood_component_details,
+      is_paid,
+      payment_method,
+      payment_details,
+      hos_pat_reg,
+      hos_bill,
+      reference_id,
+    } = req.body;
+
+    if (!patient_name || !sex || !age || !blood_component_details) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    let bloodDetails = typeof blood_component_details === "string"
+      ? JSON.parse(blood_component_details)
+      : blood_component_details;
+
+    let total_amount = bloodDetails.reduce(
+      (sum, item) => sum + Number(item.amount || 0), 0
+    );
+
+    const bill_no = await getNextBillNo();
+
+    const jsonBlood = sql.raw(`'${JSON.stringify(bloodDetails)}'::jsonb`);
+    const jsonPayment = sql.raw(`'${JSON.stringify(payment_details || {})}'::jsonb`);
+
+    let result;
+
+    // 🔄 INIT → COMPLETE
+    if (reference_id) {
+      const updated = await db
+        .update(billings)
+        .set({
+          bill_no,
+          hospital_name,
+          referred_by_dr,
+          crn,
+          ward,
+          bed,
+          ipd_no,
+          blood_component_details: jsonBlood,
+          payment_details: jsonPayment,
+          total_amount: Number(total_amount.toFixed(2)),
+          user_id,
+          is_paid,
+          payment_method,
+          hos_pat_reg,
+          hos_bill,
+          status: "COMPLETED",
+          updated_at: new Date(),
+        })
+        .where(eq(billings.reference_id, reference_id))
+        .returning();
+
+      result = updated[0];
+    }
+
+    // 🆕 DIRECT COUNTER
+    else {
+      const inserted = await db
+        .insert(billings)
+        .values({
+          bill_no,
+          patient_name,
+          sex,
+          age,
+          mobile_number,
+          father_husband_name,
+          hospital_name,
+          referred_by_dr,
+          crn,
+          ward,
+          bed,
+          ipd_no,
+          blood_component_details: jsonBlood,
+          payment_details: jsonPayment,
+          total_amount: Number(total_amount.toFixed(2)),
+          user_id,
+          is_paid,
+          payment_method,
+          hos_pat_reg,
+          hos_bill,
+          status: "COMPLETED",
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+        .returning();
+
+      result = inserted[0];
+    }
+
+    res.status(201).json({
+      message: "Billing done",
+      data: result
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Billing failed" });
+  }
+};
+
+
+
 export const updateBilling = async (req, res) => {
   try {
     const {
@@ -870,6 +1061,7 @@ console.log("mobile", mobile)
 
 // for receptionist part
 
+
 // export const initBilling = async (req, res) => {
 //   try {
 //     let {
@@ -878,188 +1070,274 @@ console.log("mobile", mobile)
 //       age,
 //       mobile_number,
 //       father_husband_name,
-//       hos_bill
+//       hos_bill,
+
+//       // ✅ NEW FIELDS
+//       hospital_name,
+//       referred_by_dr,
+//       ward,
+//       hos_pat_reg,
+//       crn,
+//       bed,
+//       ipd_no
 //     } = req.body;
 
+//     // 🔥 Normalize age safely
 //     let formattedAge;
 
+//     try {
+//       if (typeof age === "string") {
+//         const parsed = JSON.parse(age);
+//         formattedAge = JSON.stringify(parsed);
+//       } else if (typeof age === "object" && age !== null) {
+//         formattedAge = JSON.stringify(age);
+//       }
+//     } catch (e) {
+//       console.error("Invalid age format:", age);
+//     }
+
+//     if (!formattedAge) {
+//       return res.status(400).json({ message: "Invalid age format" });
+//     }
+
+//     const referenceId = "REF" + Date.now();
+
+//     const safe = (v) => v ?? null;
+// const result = await db.insert(billings).values({
+//   reference_id: referenceId,
+//   patient_name,
+//   sex,
+//   age: formattedAge,
+//   mobile_number: safe(mobile_number),
+//   father_husband_name: safe(father_husband_name),
+//   hospital_name: safe(hospital_name),
+//   referred_by_dr: safe(referred_by_dr),
+//   ward: safe(ward),
+//   hos_pat_reg: safe(hos_pat_reg),
+//   crn: safe(crn),
+//   bed: safe(bed),
+//   ipd_no: safe(ipd_no),
+//   hos_bill: hos_bill ? String(hos_bill) : null,
+//   status: "PENDING",
+//   created_at: new Date(),
+//   updated_at: new Date()
+// }).returning();
+
+//     // const result = await db.insert(billings).values({
+//     //   reference_id: referenceId,
+
+//     //   // 👨‍⚕️ Basic info
+//     //   patient_name,
+//     //   sex,
+//     //   age: formattedAge,
+//     //   mobile_number: mobile_number || null,
+//     //   father_husband_name: father_husband_name || null,
+
+//     //   // 🏥 Hospital info (NEW)
+//     //   hospital_name: hospital_name || null,
+//     //   referred_by_dr: referred_by_dr || null,
+//     //   ward: ward || null,
+//     //   hos_pat_reg: hos_pat_reg || null,
+//     //   crn: crn || null,
+//     //   bed: bed || null,
+//     //   ipd_no: ipd_no || null,
+
+//     //   // 💵 Billing init
+//     //   hos_bill: hos_bill || null,
+//     //   status: "PENDING",
+
+//     //   created_at: new Date(),
+//     //   updated_at: new Date()
+//     // }).returning();
+
+//     return res.json({
+//       message: "Patient initialized successfully",
+//       referenceId,
+//       data: result[0]
+//     });
+
+//   } catch (err) {
+//   console.error("❌ FULL ERROR:", {
+//     message: err.message,
+//     detail: err.detail,
+//     hint: err.hint,
+//     code: err.code,
+//     column: err.column,
+//     constraint: err.constraint,
+//     table: err.table,
+//   });
+
+//   res.status(500).json({ message: err.message });
+// }
+// };
+
+
+
+// export const initBilling = async (req, res) => {
 // try {
-//   if (typeof age === "string") {
-//     const parsed = JSON.parse(age);
-//     formattedAge = JSON.stringify(parsed);
-//   } else if (typeof age === "object" && age !== null) {
-//     formattedAge = JSON.stringify(age);
-//   }
-// } catch (e) {
-//   console.error("Invalid age format:", age);
+// let {
+// patient_name,
+// sex,
+// age,
+// mobile_number,
+// father_husband_name,
+// hos_bill,
+
+
+//   hospital_name,
+//   referred_by_dr,
+//   ward,
+//   hos_pat_reg,
+//   crn,
+//   bed,
+//   ipd_no
+// } = req.body;
+
+// // -------------------------------
+// // 🔹 Helpers
+// // -------------------------------
+// const normalizeString = (v) =>
+//   typeof v === "string" ? v.trim() : v != null ? String(v).trim() : null;
+
+// const isValidMobile = (m) => /^[0-9]{10}$/.test(m);
+// const isValidAadhaar = (a) => /^[0-9]{12}$/.test(a);
+
+// // -------------------------------
+// // 🔹 Required validation
+// // -------------------------------
+// if (!patient_name || !normalizeString(patient_name)) {
+//   return res.status(400).json({ message: "Patient name required" });
 // }
 
-// if (!formattedAge) {
+// if (!sex || !["male", "female"].includes(String(sex).toLowerCase())) {
+//   return res.status(400).json({ message: "Invalid sex" });
+// }
+
+// if (!age) {
+//   return res.status(400).json({ message: "Age required" });
+// }
+
+// // -------------------------------
+// // 🔹 Age validation (strict)
+// // -------------------------------
+// let formattedAge;
+
+// try {
+//   const parsed = typeof age === "string" ? JSON.parse(age) : age;
+
+//   if (
+//   parsed.y === 0 &&
+//   parsed.m === 0 &&
+//   parsed.d === 0
+// ) {
+//   return res.status(400).json({
+//     message: "Invalid age values"
+//   });
+// }
+
+//   // if (
+//   //   typeof parsed.y !== "number" ||
+//   //   typeof parsed.m !== "number" ||
+//   //   typeof parsed.d !== "number"
+//   // ) {
+//   //   throw new Error();
+//   // }
+
+//   formattedAge = JSON.stringify({
+//     y: Number(parsed.y),
+//     m: Number(parsed.m),
+//     d: Number(parsed.d),
+//   });
+// } catch {
 //   return res.status(400).json({ message: "Invalid age format" });
 // }
 
-//     // 🔥 Normalize age safely
-//     // let formattedAge;
+// // -------------------------------
+// // 🔹 Optional validations
+// // -------------------------------
+// if (mobile_number && !isValidMobile(String(mobile_number))) {
+//   return res.status(400).json({ message: "Invalid mobile number" });
+// }
 
-//     // try {
-//     //   if (typeof age === "string") {
-//     //     const parsed = JSON.parse(age);
-//     //     formattedAge = JSON.stringify(parsed);
-//     //   } else if (typeof age === "object") {
-//     //     formattedAge = JSON.stringify(age);
-//     //   } else {
-//     //     formattedAge = null;
-//     //   }
-//     // } catch (e) {
-//     //   console.error("Invalid age format:", age);
-//     //   formattedAge = null;
-//     // }
+// if (hos_bill && !isValidAadhaar(String(hos_bill))) {
+//   return res.status(400).json({ message: "Invalid Aadhaar number" });
+// }
 
-//     const referenceId = "REF" + Date.now();
+// // -------------------------------
+// // 🔹 Generate safe reference ID
+// // -------------------------------
+// const referenceId =
+//   "REF" + Date.now() + Math.floor(Math.random() * 1000);
 
-//     const result = await db.insert(billings).values({
-//       reference_id: referenceId,
-//       patient_name,
-//       sex,
-//       age: formattedAge, // ✅ FIXED
-//       mobile_number,
-//       father_husband_name,
-//       hos_bill,
-//       status: "PENDING",
-//       created_at: new Date(),
-//       updated_at: new Date()
-//     }).returning();
+//   const lastBill = await db
+//   .select({ bill_no: billings.bill_no })
+//   .from(billings)
+//   .orderBy(desc(billings.bill_no))
+//   .limit(1);
 
-//     return res.json({
-//       message: "Patient saved",
-//       referenceId,
-//       data: result[0]
-//     });
+// const nextBillNo = (lastBill[0]?.bill_no || 0) + 1;
 
-//   } catch (err) {
-//     console.error("INIT BILLING ERROR:", err);
+// // -------------------------------
+// // 🔹 Insert (normalized data only)
+// // -------------------------------
+// const result = await db.insert(billings).values({
+//   reference_id: referenceId,
+//   bill_no: nextBillNo,
 
-//     // 🔥 VERY IMPORTANT
-//     res.status(500).json({ message: err.message });
-//   }
+//   patient_name: normalizeString(patient_name),
+//   sex: normalizeString(sex),
+//   age: formattedAge,
+
+//   mobile_number: normalizeString(mobile_number),
+//   father_husband_name: normalizeString(father_husband_name),
+
+//   hospital_name: normalizeString(hospital_name),
+//   referred_by_dr: normalizeString(referred_by_dr),
+//   ward: normalizeString(ward),
+//   hos_pat_reg: normalizeString(hos_pat_reg),
+//   crn: normalizeString(crn),
+//   bed: normalizeString(bed),
+//   ipd_no: normalizeString(ipd_no),
+
+//   hos_bill: normalizeString(hos_bill),
+
+//   status: "PENDING",
+//   created_at: new Date(),
+//   updated_at: new Date()
+// }).returning();
+
+// return res.json({
+//   message: "Patient initialized successfully",
+//   referenceId,
+//   data: result[0]
+// });
+
+
+// } catch (err) {
+// console.error("❌ INIT BILLING ERROR:", {
+// message: err.message,
+// code: err.code,
+// detail: err.detail,
+// constraint: err.constraint,
+// });
+
+
+// // Handle duplicate reference_id gracefully
+// if (err.code === "23505") {
+//   return res.status(409).json({
+//     message: "Duplicate reference ID, please retry",
+//   });
+// }
+
+// return res.status(500).json({
+//   message: "Failed to initialize billing",
+//   error: err.message
+// });
+
+
+// }
 // };
 
-export const initBilling = async (req, res) => {
-  try {
-    let {
-      patient_name,
-      sex,
-      age,
-      mobile_number,
-      father_husband_name,
-      hos_bill,
-
-      // ✅ NEW FIELDS
-      hospital_name,
-      referred_by_dr,
-      ward,
-      hos_pat_reg,
-      crn,
-      bed,
-      ipd_no
-    } = req.body;
-
-    // 🔥 Normalize age safely
-    let formattedAge;
-
-    try {
-      if (typeof age === "string") {
-        const parsed = JSON.parse(age);
-        formattedAge = JSON.stringify(parsed);
-      } else if (typeof age === "object" && age !== null) {
-        formattedAge = JSON.stringify(age);
-      }
-    } catch (e) {
-      console.error("Invalid age format:", age);
-    }
-
-    if (!formattedAge) {
-      return res.status(400).json({ message: "Invalid age format" });
-    }
-
-    const referenceId = "REF" + Date.now();
-
-    const result = await db.insert(billings).values({
-      reference_id: referenceId,
-
-      // 👨‍⚕️ Basic info
-      patient_name,
-      sex,
-      age: formattedAge,
-      mobile_number: mobile_number || null,
-      father_husband_name: father_husband_name || null,
-
-      // 🏥 Hospital info (NEW)
-      hospital_name: hospital_name || null,
-      referred_by_dr: referred_by_dr || null,
-      ward: ward || null,
-      hos_pat_reg: hos_pat_reg || null,
-      crn: crn || null,
-      bed: bed || null,
-      ipd_no: ipd_no || null,
-
-      // 💵 Billing init
-      hos_bill: hos_bill || null,
-      status: "PENDING",
-
-      created_at: new Date(),
-      updated_at: new Date()
-    }).returning();
-
-    return res.json({
-      message: "Patient initialized successfully",
-      referenceId,
-      data: result[0]
-    });
-
-  } catch (err) {
-    console.error("INIT BILLING ERROR:", err);
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// export const initBilling = async (req, res) => {
-//   try {
-//     const {
-//       patient_name,
-//       sex,
-//       age,
-//       mobile_number,
-//       father_husband_name,
-//       hos_bill
-//     } = req.body;
-
-//     const referenceId = "REF" + Date.now();
-
-//     const result = await db.insert(billings).values({
-//       reference_id: referenceId,
-//       patient_name,
-//       sex,
-//       age,
-//       mobile_number,
-//       father_husband_name,
-//       hos_bill,
-//       status: "PENDING",
-//       created_at: new Date(),
-//       updated_at: new Date()
-//     }).returning();
-
-//     return res.json({
-//       message: "Patient saved",
-//       referenceId,
-//       data: result[0]
-//     });
-
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Error" });
-//   }
-// };
 
 export const getByReference = async (req, res) => {
   const { refId } = req.params;
