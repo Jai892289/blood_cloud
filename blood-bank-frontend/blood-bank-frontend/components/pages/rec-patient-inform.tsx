@@ -64,18 +64,18 @@ const data = res.data.data;
 
   toast.success("Existing patient found");
 
-  let parsedAge = { y: "", m: "", d: "" };
+  // let parsedAge = { y: "", m: "", d: "" };
 
-  try {
-    if (data.age) {
-      const ageObj = JSON.parse(data.age);
-      parsedAge = {
-        y: ageObj.y?.toString() || "",
-        m: ageObj.m?.toString() || "",
-        d: ageObj.d?.toString() || "",
-      };
-    }
-  } catch {}
+  // try {
+  //   if (data.age) {
+  //     const ageObj = JSON.parse(data.age);
+  //     parsedAge = {
+  //       y: ageObj.y?.toString() || "",
+  //       m: ageObj.m?.toString() || "",
+  //       d: ageObj.d?.toString() || "",
+  //     };
+  //   }
+  // } catch {}
 
   setFormData((prev) => ({
     ...prev,
@@ -83,9 +83,9 @@ const data = res.data.data;
     sex: data.sex || "",
     fatherHusbandName: data.father_husband_name || "",
     hos_bill: data.hos_bill || "",
-    ageYears: parsedAge.y,
-    ageMonths: parsedAge.m,
-    ageDays: parsedAge.d,
+      ageYears: data.age_years?.toString() || "",
+  ageMonths: data.age_months?.toString() || "",
+  ageDays: data.age_days?.toString() || "",
   }));
 } catch (err: any) {
   if (err.response?.status === 404) {
@@ -148,15 +148,19 @@ if (!/^[0-9]{10}$/.test(formData.mobileNumber))
 if (formData.hos_bill && !/^[0-9]{12}$/.test(formData.hos_bill))
   return "Enter valid 12-digit Aadhaar";
 
-const y = Number(formData.ageYears || 0);
-const m = Number(formData.ageMonths || 0);
-const d = Number(formData.ageDays || 0);
+const y = formData.ageYears ? Number(formData.ageYears) : null;
+const m = formData.ageMonths ? Number(formData.ageMonths) : null;
+const d = formData.ageDays ? Number(formData.ageDays) : null;
 
-if (y === 0 && m === 0 && d === 0)
+// const y = Number(formData.ageYears || 0);
+// const m = Number(formData.ageMonths || 0);
+// const d = Number(formData.ageDays || 0);
+
+if (y === null && m === null && d === null)
   return "Enter valid age";
 
-if (m > 11) return "Months must be 0–11";
-if (d > 31) return "Days must be 0–31";
+if (m !== null && m > 11) return "Months must be 0–11";
+if (d !== null && d > 31) return "Days must be 0–31";
 
 if (!formData.fatherHusbandName.trim())
   return "Father/Husband name required";
@@ -197,11 +201,14 @@ try {
     patient_name: formData.patientName.trim(),
     sex: formData.sex,
 
-    age: JSON.stringify({
-      y: Number(formData.ageYears || 0),
-      m: Number(formData.ageMonths || 0),
-      d: Number(formData.ageDays || 0),
-    }),
+   age_years: formData.ageYears ? Number(formData.ageYears) : 0,
+age_months: formData.ageMonths ? Number(formData.ageMonths) : 0,
+age_days: formData.ageDays ? Number(formData.ageDays) : 0,
+    // age: JSON.stringify({
+    //   y: Number(formData.ageYears || 0),
+    //   m: Number(formData.ageMonths || 0),
+    //   d: Number(formData.ageDays || 0),
+    // }),
 
     mobile_number: formData.mobileNumber.trim(),
     father_husband_name: formData.fatherHusbandName.trim(),
@@ -267,19 +274,61 @@ return ( <div className="min-h-screen bg-red-50 p-6"> <Toaster />
         <input type="number" min="0" max="120"
           placeholder="Years"
           value={formData.ageYears}
-          onChange={(e)=>setFormData({...formData,ageYears:e.target.value})}
+onChange={(e) => {
+  let val = e.target.value;
+
+  if (val === "") {
+    setFormData({ ...formData, ageYears: "" });
+    return;
+  }
+
+  let num = Number(val);
+
+  if (num < 0) num = 0;
+  if (num > 120) num = 120;
+
+  setFormData({ ...formData, ageYears: String(num) });
+}}
           className="border p-3 rounded"/>
 
         <input type="number" min="0" max="11"
           placeholder="Months"
           value={formData.ageMonths}
-          onChange={(e)=>setFormData({...formData,ageMonths:e.target.value})}
+onChange={(e) => {
+  let val = e.target.value;
+
+  if (val === "") {
+    setFormData({ ...formData, ageMonths: "" });
+    return;
+  }
+
+  let num = Number(val);
+
+  if (num < 0) num = 0;
+  if (num > 11) num = 11;
+
+  setFormData({ ...formData, ageMonths: String(num) });
+}}
           className="border p-3 rounded"/>
 
         <input type="number" min="0" max="31"
           placeholder="Days"
           value={formData.ageDays}
-          onChange={(e)=>setFormData({...formData,ageDays:e.target.value})}
+          onChange={(e) => {
+  let val = e.target.value;
+
+  if (val === "") {
+    setFormData({ ...formData, ageDays: "" });
+    return;
+  }
+
+  let num = Number(val);
+
+  if (num < 0) num = 0;
+  if (num > 31) num = 31;
+
+  setFormData({ ...formData, ageDays: String(num) });
+}}
           className="border p-3 rounded"/>
 
         <input name="fatherHusbandName"

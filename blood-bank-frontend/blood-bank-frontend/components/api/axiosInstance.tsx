@@ -4,7 +4,7 @@ import axios from "axios"
 
 // ✅ Create a reusable axios instance
 const axiosInstance = axios.create({
-  // baseURL: "http://localhost:5000/api", // 🔗 Your backend base URL
+  // baseURL: "http://localhost:5002/api", // 🔗 Your backend base URL
     baseURL: process.env.NEXT_PUBLIC_API_URL,
     // baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
   headers: {

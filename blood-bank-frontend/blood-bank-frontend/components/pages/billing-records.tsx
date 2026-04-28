@@ -30,7 +30,9 @@ interface BillingRecord {
   blood_component_details: BloodComponent[];
   user?: UserDetails | null;
     patient_name?: string;
-  age?: any;
+age_years?: number;
+age_months?: number;
+age_days?: number;
   mobile_number?: string;
   hospital_name?: string;
   ward?: string;
@@ -255,10 +257,16 @@ const handleBulkExport = async () => {
     ].join(","));
 
     allData.forEach((record: any) => {
-      const ageObj = record.age ? JSON.parse(record.age) : null;
-      const age = ageObj
-        ? `${ageObj.y}y ${ageObj.m}m ${ageObj.d}d`
-        : "";
+      // const ageObj = record.age ? JSON.parse(record.age) : null;
+      // const age = ageObj
+      //   ? `${ageObj.y}y ${ageObj.m}m ${ageObj.d}d`
+      //   : "";
+
+      const age = formatAge(
+  record.age_years,
+  record.age_months,
+  record.age_days
+);
 
       const status = record.is_cancelled
         ? "Cancelled"
@@ -309,6 +317,23 @@ const handleBulkExport = async () => {
     console.error("Export failed:", err);
     alert("Export failed");
   }
+};
+
+  const formatAge = (
+  y?: number,
+  m?: number,
+  d?: number
+) => {
+  const parts: string[] = [];
+
+  if (y && y > 0) parts.push(`${y}y`);
+  if (m && m > 0) parts.push(`${m}m`);
+  if (d && d > 0) parts.push(`${d}d`);
+
+  // If everything is 0 or undefined
+  if (parts.length === 0) return "0d";
+
+  return parts.join(" ");
 };
 
   return (
@@ -603,23 +628,14 @@ const handleBulkExport = async () => {
                     <p><strong>Bill No:</strong> {selectedRecord.bill_no}</p>
                     <p><strong>Patient Name:</strong> {selectedRecord.patient_name}</p>
                     {/* <p><strong>Age:</strong> {selectedRecord.age} Yr</p> */}
-                    <p>
+                   
+                        <p>
   <strong>Age:</strong>{" "}
-  {(() => {
-    if (!selectedRecord.age) return "N/A";
-
-    const ageObj =
-      typeof selectedRecord.age === "string"
-        ? JSON.parse(selectedRecord.age)
-        : selectedRecord.age;
-
-    const parts = [];
-    if (ageObj.y) parts.push(`${ageObj.y}y`);
-    if (ageObj.m) parts.push(`${ageObj.m}m`);
-    if (ageObj.d) parts.push(`${ageObj.d}d`);
-
-    return parts.join(" ");
-  })()}
+  {formatAge(
+    selectedRecord.age_years,
+    selectedRecord.age_months,
+    selectedRecord.age_days
+  )}
 </p>
                     <p><strong>Sex:</strong> {selectedRecord.sex}</p>
                     <p><strong>Mobile:</strong> {selectedRecord.mobile_number}</p>

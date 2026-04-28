@@ -13,11 +13,14 @@ interface PatientData {
   date: string;
   patientName: string;
   sex: string;
-  age: string;
+ageYears?: string;
+ageMonths?: string;
+ageDays?: string;
   mobileNumber: string;
   fatherHusbandName: string;
   hospitalName: string;
   referredByDr: string;
+  
   // crn: string
   ward: string;
   // bed: string
@@ -25,9 +28,7 @@ interface PatientData {
   // dateOfIPD: string
   hos_pat_reg: string;
   hos_bill: string;
-  ageYears?: string;
-  ageMonths?: string;
-  ageDays?: string;
+ 
 
 }
 
@@ -70,7 +71,10 @@ export default function PatientInformation({
       billNo: "",
       patientName: "",
       sex: "",
-      age: "",
+      ageYears: "",
+ageMonths: "",
+ageDays: "",
+      // age: "",
       mobileNumber: "",
       fatherHusbandName: "",
       hospitalName: "",
@@ -103,21 +107,21 @@ const fetchByReference = async () => {
     const data = res.data;
 
     // ✅ Parse age properly
-    let parsedAge = { y: "", m: "", d: "" };
+    // let parsedAge = { y: "", m: "", d: "" };
 
-    try {
-      if (data.age) {
-        const ageObj = JSON.parse(data.age);
+    // try {
+    //   if (data.age) {
+    //     const ageObj = JSON.parse(data.age);
 
-        parsedAge = {
-          y: ageObj.y?.toString() || "",
-          m: ageObj.m?.toString() || "",
-          d: ageObj.d?.toString() || "",
-        };
-      }
-    } catch (e) {
-      console.log("Age parse error:", e);
-    }
+    //     parsedAge = {
+    //       y: ageObj.y?.toString() || "",
+    //       m: ageObj.m?.toString() || "",
+    //       d: ageObj.d?.toString() || "",
+    //     };
+    //   }
+    // } catch (e) {
+    //   console.log("Age parse error:", e);
+    // }
 
     // ✅ Set form data
     setFormData((prev) => ({
@@ -131,9 +135,19 @@ const fetchByReference = async () => {
   hos_bill: data.hos_bill || "",
 
   // 🎂 Age
-  ageYears: parsedAge.y,
-  ageMonths: parsedAge.m,
-  ageDays: parsedAge.d,
+ ageYears: data.age_years !== null && data.age_years !== undefined
+  ? String(data.age_years)
+  : "0",
+
+ageMonths: data.age_months !== null && data.age_months !== undefined
+  ? String(data.age_months)
+  : "0",
+
+ageDays: data.age_days !== null && data.age_days !== undefined
+  ? String(data.age_days)
+  : "0",
+
+
     reference_id: data.reference_id,
 
 
@@ -228,7 +242,10 @@ const fetchByReference = async () => {
         ...prev,
         patientName: data.patient_name || "",
         hos_bill: data.hos_bill || "",
-        age: data.age || "",
+        ageYears: data.age_years?.toString() || "",
+ageMonths: data.age_months?.toString() || "",
+ageDays: data.age_days?.toString() || "",
+        // age: data.age || "",
         sex: data.sex || "",
         fatherHusbandName: data.father_husband_name || "",
       }));
@@ -241,7 +258,9 @@ const fetchByReference = async () => {
         setFormData(prev => ({
           ...prev,
           patientName: "",
-          age: "",
+          ageYears: "",
+ageMonths: "",
+ageDays: "",
           sex: "",
           fatherHusbandName: "",
           hos_bill: ""
@@ -312,13 +331,26 @@ const fetchByReference = async () => {
     //     if (!formData.age || parseFloat(formData.age) <= 0) {
     //   newErrors.age = "Enter valid age";
     // }
-    const y = Number((formData as any).ageYears || 0);
-    const m = Number((formData as any).ageMonths || 0);
-    const d = Number((formData as any).ageDays || 0);
 
-    if (y === 0 && m === 0 && d === 0) {
-      newErrors.age = "Enter valid age";
-    }
+    const y = formData.ageYears ? Number(formData.ageYears) : null;
+const m = formData.ageMonths ? Number(formData.ageMonths) : null;
+const d = formData.ageDays ? Number(formData.ageDays) : null;
+
+if (
+  (y === null || y === 0) &&
+  (m === null || m === 0) &&
+  (d === null || d === 0)
+) {
+  newErrors.age = "Enter valid age";
+}
+
+    // const y = Number((formData as any).ageYears || 0);
+    // const m = Number((formData as any).ageMonths || 0);
+    // const d = Number((formData as any).ageDays || 0);
+
+    // if (y === 0 && m === 0 && d === 0) {
+    //   newErrors.age = "Enter valid age";
+    // }
     if (!formData.mobileNumber || formData.mobileNumber.length !== 10)
       newErrors.mobileNumber = "Enter valid 10-digit mobile number";
     if (!formData.fatherHusbandName.trim())
@@ -349,14 +381,23 @@ const fetchByReference = async () => {
       //   d: Number(formData.ageDays || 0),
       // });
 
-        const finalData = {
-      ...formData,
-      age: JSON.stringify({
-        y: Number(formData.ageYears || 0),
-        m: Number(formData.ageMonths || 0),
-        d: Number(formData.ageDays || 0),
-      }),
-    };
+      const finalData = {
+  ...formData,
+
+age_years: Number(formData.ageYears || 0),
+age_months: Number(formData.ageMonths || 0),
+age_days: Number(formData.ageDays || 0),
+};
+
+    //     const finalData = {
+    //   ...formData,
+      
+    //   // age: JSON.stringify({
+    //   //   y: Number(formData.ageYears || 0),
+    //   //   m: Number(formData.ageMonths || 0),
+    //   //   d: Number(formData.ageDays || 0),
+    //   // }),
+    // };
 
 
       console.log("formData", finalData)
@@ -370,7 +411,10 @@ const fetchByReference = async () => {
         billNo: "",
         patientName: "",
         sex: "",
-        age: "",
+        ageYears: "",
+ageMonths: "",
+ageDays: "",
+        // age: "",
         mobileNumber: "",
         fatherHusbandName: "",
         hospitalName: "",
@@ -598,37 +642,79 @@ const fetchByReference = async () => {
                 <label className="block text-sm font-medium mb-2">
                   Age <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="Years"
-                    value={formData.ageYears || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ageYears: e.target.value })
-                    }
-                    className="w-1/3 p-2 border rounded"
-                  />
+               <div className="flex gap-2">
+  {/* YEARS */}
+  <input
+    type="number"
+    placeholder="Years"
+    value={formData.ageYears || ""}
+    min="0"
+    max="120"
+    onChange={(e) => {
+      let val = e.target.value;
 
-                  <input
-                    type="number"
-                    placeholder="Months"
-                    value={formData.ageMonths || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ageMonths: e.target.value })
-                    }
-                    className="w-1/3 p-2 border rounded"
-                  />
+      if (val === "") {
+        setFormData({ ...formData, ageYears: "" });
+        return;
+      }
 
-                  <input
-                    type="number"
-                    placeholder="Days"
-                    value={formData.ageDays || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ageDays: e.target.value })
-                    }
-                    className="w-1/3 p-2 border rounded"
-                  />
-                </div>
+      let num = Number(val);
+      if (num < 0) num = 0;
+      if (num > 120) num = 120;
+
+      setFormData({ ...formData, ageYears: String(num) });
+    }}
+    className="w-1/3 p-2 border rounded"
+  />
+
+  {/* MONTHS */}
+  <input
+    type="number"
+    placeholder="Months"
+    value={formData.ageMonths || ""}
+    min="0"
+    max="11"
+    onChange={(e) => {
+      let val = e.target.value;
+
+      if (val === "") {
+        setFormData({ ...formData, ageMonths: "" });
+        return;
+      }
+
+      let num = Number(val);
+      if (num < 0) num = 0;
+      if (num > 11) num = 11;
+
+      setFormData({ ...formData, ageMonths: String(num) });
+    }}
+    className="w-1/3 p-2 border rounded"
+  />
+
+  {/* DAYS */}
+  <input
+    type="number"
+    placeholder="Days"
+    value={formData.ageDays || ""}
+    min="0"
+    max="31"
+    onChange={(e) => {
+      let val = e.target.value;
+
+      if (val === "") {
+        setFormData({ ...formData, ageDays: "" });
+        return;
+      }
+
+      let num = Number(val);
+      if (num < 0) num = 0;
+      if (num > 31) num = 31;
+
+      setFormData({ ...formData, ageDays: String(num) });
+    }}
+    className="w-1/3 p-2 border rounded"
+  />
+</div>
                 {/* <input
   type="number"
   name="age"

@@ -22,7 +22,9 @@ interface BillingRecord {
   payment_method: string;
   payment_details: any;
   sex?: string;
-  age?: number;
+age_years?:number;
+age_months?:number;
+age_days?:number;
   mobile_number?: string;
   father_husband_name?: string;
   hospital_name?: string;
@@ -257,6 +259,7 @@ csvRows.push([
   // "Hospital",
   // "Commission",
   "Ward",
+  "Age",
   "Father/Husband",
   "Date",
   "Particulars",
@@ -301,6 +304,11 @@ const commission =
       // record.hospital_name,
       // commission, 
       record.ward,
+       formatAge(
+    record.age_years,
+    record.age_months,
+    record.age_days
+  ),
       record.father_husband_name,
       new Date(record.date).toLocaleDateString(),
       item.particulars,
@@ -419,6 +427,35 @@ alert("Failed to export data");
 
   console.log("rolerolerolerole", role)
 
+ const formatAge = (
+  y?: number | string,
+  m?: number | string,
+  d?: number | string
+) => {
+  const years = Number(y ?? 0);
+  const months = Number(m ?? 0);
+  const days = Number(d ?? 0);
+
+  // if completely missing
+  if (!years && !months && !days) return "N/A";
+
+  const parts: string[] = [];
+
+  // show properly
+  if (years > 0) parts.push(`${years}y`);
+  if (months > 0) parts.push(`${months}m`);
+  if (days > 0) parts.push(`${days}d`);
+
+  return parts.join(" ");
+};
+
+
+console.log("AGE DEBUG:", {
+  years: selectedRecord?.age_years,
+  months: selectedRecord?.age_months,
+  days: selectedRecord?.age_days,
+  full: selectedRecord
+});
 
   return (
     <div className="p-8">
@@ -804,22 +841,18 @@ alert("Failed to export data");
                     {/* <p><strong>Age:</strong> {selectedRecord.age} Yr</p> */}
                     <p>
   <strong>Age:</strong>{" "}
-  {(() => {
-    if (!selectedRecord.age) return "N/A";
-
-    const ageObj =
-      typeof selectedRecord.age === "string"
-        ? JSON.parse(selectedRecord.age)
-        : selectedRecord.age;
-
-    const parts = [];
-    if (ageObj.y) parts.push(`${ageObj.y}y`);
-    if (ageObj.m) parts.push(`${ageObj.m}m`);
-    if (ageObj.d) parts.push(`${ageObj.d}d`);
-
-    return parts.join(" ");
-  })()}
+  {formatAge(
+    selectedRecord.age_years,
+    selectedRecord.age_months,
+    selectedRecord.age_days
+  )}
 </p>
+                    {/* <p>
+  <strong>Age:</strong>{" "}
+ {selectedRecord.age_years},
+  {selectedRecord.age_months},
+ { selectedRecord.age_days}
+</p> */}
                     <p><strong>Sex:</strong> {selectedRecord.sex}</p>
                     <p><strong>Mobile:</strong> {selectedRecord.mobile_number}</p>
                     <p><strong>Hospital:</strong> {selectedRecord.hospital_name}</p>

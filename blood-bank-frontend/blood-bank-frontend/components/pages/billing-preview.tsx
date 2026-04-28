@@ -8,7 +8,9 @@ interface PatientData {
   date: string
   patientName: string
   sex: string
-  age: string
+age_years?: number
+age_months?: number
+age_days?: number
   mobileNumber: string
   fatherHusbandName: string
   hospitalName: string
@@ -18,6 +20,7 @@ interface PatientData {
   bed: string
   ipdNo: string
   dateOfIPD: string
+
 }
 
 interface BloodComponent {
@@ -38,25 +41,39 @@ interface BillingPreviewProps {
 export default function BillingPreview({ patientData, components, totalAmount }: BillingPreviewProps) {
   const amountInWords = convertAmountToWords(totalAmount)
 
-  const parsedPatientData = {
-  ...patientData,
-  age: patientData.age ? JSON.parse(patientData.age) : null,
-};
+//   const parsedPatientData = {
+//   ...patientData,
+//   age: patientData.age ? JSON.parse(patientData.age) : null,
+// };
 
   console.log("patientData", patientData)
 
-  const formatAge = (age: any) => {
-  if (!age) return "N/A";
-
-  const a = typeof age === "string" ? JSON.parse(age) : age;
-
+  const formatAge = (
+  y?: number,
+  m?: number,
+  d?: number
+) => {
   const parts = [];
-  if (a.y) parts.push(`${a.y}y`);
-  if (a.m) parts.push(`${a.m}m`);
-  if (a.d) parts.push(`${a.d}d`);
 
-  return parts.join(" ") || "0d";
+  if (y) parts.push(`${y}y`);
+  if (m) parts.push(`${m}m`);
+  if (d) parts.push(`${d}d`);
+
+  return parts.length ? parts.join(" ") : "N/A";
 };
+
+//   const formatAge = (age: any) => {
+//   if (!age) return "N/A";
+
+//   const a = typeof age === "string" ? JSON.parse(age) : age;
+
+//   const parts = [];
+//   if (a.y) parts.push(`${a.y}y`);
+//   if (a.m) parts.push(`${a.m}m`);
+//   if (a.d) parts.push(`${a.d}d`);
+
+//   return parts.join(" ") || "0d";
+// };
 
   return (
     <div className="space-y-4">
@@ -81,7 +98,12 @@ export default function BillingPreview({ patientData, components, totalAmount }:
           <div className="flex justify-between">
   <span className="text-muted-foreground">Age:</span>
  <span className="font-semibold">
-  {formatAge(parsedPatientData.age)}
+  {formatAge(
+  patientData.age_years,
+  patientData.age_months,
+  patientData.age_days
+)}
+  {/* {formatAge(parsedPatientData.age)} */}
 </span>
 </div>
           

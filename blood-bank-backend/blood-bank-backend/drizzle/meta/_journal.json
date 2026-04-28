@@ -22,6 +22,41 @@
       "when": 1776342393991,
       "tag": "0002_mute_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777359318810,
+      "tag": "0003_curious_manta",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777361088953,
+      "tag": "0004_little_blazing_skull",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777361109805,
+      "tag": "0005_superb_wendell_rand",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777361145947,
+      "tag": "0006_ambitious_banshee",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777361975117,
+      "tag": "0007_narrow_vengeance",
+      "breakpoints": true
     }
   ]
 }

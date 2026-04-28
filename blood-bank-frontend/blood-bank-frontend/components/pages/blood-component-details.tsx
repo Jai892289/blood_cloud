@@ -14,7 +14,9 @@ interface PatientData {
   date: string;
   patientName: string;
   sex: string;
-  age: string;
+age_years:number;
+age_months:number;
+age_days:number;
   mobileNumber: string;
   fatherHusbandName: string;
   hospitalName: string;
@@ -230,22 +232,13 @@ const preparePayload = () => {
     0
   );
 
-  let parsedAge = null;
-
-  try {
-    parsedAge = patientData.age
-      ? typeof patientData.age === "string"
-        ? JSON.parse(patientData.age)
-        : patientData.age
-      : null;
-  } catch (e) {
-    console.log("Age parse error", e);
-  }
-
+ 
   return {
     patient_name: patientData.patientName,
     sex: patientData.sex,
-    age: parsedAge || 0,
+age_years: Number(patientData.age_years || 0),
+age_months: Number(patientData.age_months || 0),
+age_days: Number(patientData.age_days || 0),
     mobile_number: patientData.mobileNumber,
     father_husband_name: patientData.fatherHusbandName,
     hospital_name: patientData.hospitalName,
@@ -333,6 +326,23 @@ const preparePayload = () => {
       },
     ]);
   }, []);
+
+    const formatAge = (
+  y?: number,
+  m?: number,
+  d?: number
+) => {
+  const parts: string[] = [];
+
+  if (y && y > 0) parts.push(`${y}y`);
+  if (m && m > 0) parts.push(`${m}m`);
+  if (d && d > 0) parts.push(`${d}d`);
+
+  // If everything is 0 or undefined
+  if (parts.length === 0) return "0d";
+
+  return parts.join(" ");
+};
 
 
   return (
@@ -723,23 +733,12 @@ const preparePayload = () => {
                 <div>
                   <p><strong>SL No:</strong> {patientData.slNo || "-"}</p>
                   <p className="mt-2"><strong>Patient’s Name:</strong> {patientData.patientName}</p>
-                  <p>
-  <strong>Age:</strong>{" "}
-  {(() => {
-    if (!patientData.age) return "N/A";
-
-    const ageObj =
-      typeof patientData.age === "string"
-        ? JSON.parse(patientData.age)
-        : patientData.age;
-
-    const parts = [];
-    if (ageObj.y) parts.push(`${ageObj.y}y`);
-    if (ageObj.m) parts.push(`${ageObj.m}m`);
-    if (ageObj.d) parts.push(`${ageObj.d}d`);
-
-    return parts.join(" ");
-  })()}
+        <p>  <strong>Age:</strong>{" "}
+  {formatAge(
+    patientData.age_years,
+    patientData.age_months,
+    patientData.age_days
+  )}
 </p>
                   {/* <p><strong>Age:</strong> {patientData.age} Yr</p> */}
                   <p><strong>Father/Husband Name:</strong> {patientData.fatherHusbandName}</p>
